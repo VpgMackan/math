@@ -8,19 +8,26 @@ const rootDir = path.resolve(__dirname, "..");
 global.window = global;
 
 global.GaussShared = {
-  randomInt: (min, max, rng = Math.random) => min + Math.floor(rng() * (max - min + 1)),
+  randomInt: (min, max, rng = Math.random) =>
+    min + Math.floor(rng() * (max - min + 1)),
 };
 
-const gauss = require(path.join(rootDir, "gauss-core.js"));
-const matrixCore = require(path.join(rootDir, "matrix-ops-core.js"));
-require(path.join(rootDir, "math5-engine-generators.js"));
-const math5 = require(path.join(rootDir, "math5-engine.js"));
+const gauss = require(path.join(rootDir, "js/shared/gauss-core.js"));
+const matrixCore = require(path.join(rootDir, "js/matrix/matrix-ops-core.js"));
+require(path.join(rootDir, "js/math5/math5-engine-generators.js"));
+const math5 = require(path.join(rootDir, "js/math5/math5-engine.js"));
 
 // Gauss core math checks
 assert.deepEqual(gauss.frac(6, -8), [-3, 4]);
 assert.deepEqual(gauss.parse("-3/2"), [-3, 2]);
 assert.equal(gauss.format([5, 1]), "5");
-assert.equal(gauss.det([[1, 2], [3, 4]]), -2);
+assert.equal(
+  gauss.det([
+    [1, 2],
+    [3, 4],
+  ]),
+  -2,
+);
 
 // Matrix operations checks
 const ops = matrixCore.createMatrixOpsCore(gauss.det);
@@ -41,7 +48,13 @@ assert.deepEqual(
     [10, 8],
   ],
 );
-assert.deepEqual(ops.calculate("determinant", [[1, 2], [3, 4]]), [[-2]]);
+assert.deepEqual(
+  ops.calculate("determinant", [
+    [1, 2],
+    [3, 4],
+  ]),
+  [[-2]],
+);
 
 // Math5 engine checks
 assert.ok(math5.categories.combinatorics);
@@ -60,7 +73,11 @@ const mockTask = {
     { type: "digits", answer: "1AF" },
   ],
 };
-assert.deepEqual(math5.assess(mockTask, ["1/2", "{5,1,3}", "01af"]), [true, true, true]);
+assert.deepEqual(math5.assess(mockTask, ["1/2", "{5,1,3}", "01af"]), [
+  true,
+  true,
+  true,
+]);
 math5.validate(mockTask, ["0.5", "∅", "ABC"]);
 
 console.log("Regression checks passed.");

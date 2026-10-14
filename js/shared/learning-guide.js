@@ -1,6 +1,8 @@
 (() => {
   "use strict";
+
   const { $ } = window.GaussShared;
+  const topic = document.body.dataset.topic || "gauss";
   const guides = {
     gauss: {
       title: "Gausselimination, en rad i taget",
@@ -33,7 +35,8 @@
         "Produktprincipen ger 2·3=6 klädkombinationer.",
         "En grupp med två personer har ingen inbördes ordning. En första- och andraplats har ordning: samma personer kan ge olika resultat.",
       ],
-      before: "Starta med produktprincipen. Permutationer och kombinationer kommer på nästa nivå.",
+      before:
+        "Starta med produktprincipen. Permutationer och kombinationer kommer på nästa nivå.",
     },
     sets: {
       title: "Mängder är samlingar",
@@ -55,7 +58,8 @@
         "Det skrivs 17 ≡ 2 (mod 5). Svaret ska här ligga mellan 0 och 4.",
         "En klocka är ett liknande exempel: 15 och 3 visar samma timme på en 12-timmarsklocka.",
       ],
-      before: "Börja med positiva heltal. Negativa rester och ekvationer kommer senare.",
+      before:
+        "Börja med positiva heltal. Negativa rester och ekvationer kommer senare.",
     },
     bases: {
       title: "Samma tal, olika talbaser",
@@ -77,7 +81,8 @@
         "Nästa term blir 8+3=11. Regeln kan skrivas aₙ₊₁=aₙ+3.",
         "Vid multiplikation med samma tal i varje steg har du en geometrisk talföljd.",
       ],
-      before: "Börja med en konstant skillnad innan flera tidigare termer behövs.",
+      before:
+        "Börja med en konstant skillnad innan flera tidigare termer behövs.",
     },
     proofs: {
       title: "Varför gäller det för alla?",
@@ -88,7 +93,8 @@
         "Antag att den gäller för n=k. Visa att det leder till att den också gäller för k+1.",
         "Skriv en slutsats. Svarsfälten kontrollerar delar av arbetet; ditt fullständiga resonemang jämför du själv med lösningsförslaget.",
       ],
-      before: "Börja med basfall och enkla summor. Fritext rättas inte automatiskt.",
+      before:
+        "Börja med basfall och enkla summor. Fritext rättas inte automatiskt.",
     },
     differential: {
       title: "En funktion och dess förändring",
@@ -126,7 +132,7 @@
       before: "Börja med grader och träd innan kortaste vägar och Eulervägar.",
     },
   };
-  let area = "gauss";
+  let area = topic;
   function setArea(value) {
     area = value;
     const g = guides[area] || guides.gauss;
@@ -142,13 +148,18 @@
   }
   $("showGuide").onclick = () => {
     $("beginnerExample").open = !$("beginnerExample").open;
-    $("showGuide").setAttribute("aria-expanded", String($("beginnerExample").open));
+    $("showGuide").setAttribute(
+      "aria-expanded",
+      String($("beginnerExample").open),
+    );
   };
   $("beginnerExample").addEventListener("toggle", () => {
-    $("showGuide").setAttribute("aria-expanded", String($("beginnerExample").open));
+    $("showGuide").setAttribute(
+      "aria-expanded",
+      String($("beginnerExample").open),
+    );
   });
   $("startSimple").onclick = () => {
-    const topic = $("topic").value;
     if (topic === "math5") window.Math5?.startBeginner();
     else if (topic === "operations") window.MatrixOps?.startBeginner();
     else window.GaussGame?.startBeginner();
@@ -158,5 +169,5 @@
     $("beginnerStart").hidden = false;
   }
   window.BeginnerGuide = { setArea, onTopicChange, guides };
-  setArea("gauss");
+  setArea(topic === "math5" ? "combinatorics" : topic);
 })();

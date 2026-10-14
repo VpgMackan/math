@@ -32,7 +32,8 @@
     },
   };
 
-  const randomInt = (min, max, rng = Math.random) => min + Math.floor(rng() * (max - min + 1));
+  const randomInt = (min, max, rng = Math.random) =>
+    min + Math.floor(rng() * (max - min + 1));
 
   function seeded(seed) {
     let t = seed >>> 0;

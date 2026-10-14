@@ -1,5 +1,6 @@
 (() => {
   "use strict";
+
   const { $, storage } = window.GaussShared,
     E = window.Math5Engine,
     C = E.categories,
@@ -17,20 +18,26 @@
   };
   try {
     const saved = storage.readJson(key, null);
-    if (saved && C[saved.category]) state = { ...state, ...saved, version: saved.version || 1 };
-    if (state.task && !C[state.task.category]?.types[state.task.type]) state.task = null;
+    if (saved && C[saved.category])
+      state = { ...state, ...saved, version: saved.version || 1 };
+    if (state.task && !C[state.task.category]?.types[state.task.type])
+      state.task = null;
   } catch {}
   // Preserve old exercises and translate the former three-level preference.
   if (state.version !== 2) {
     const map = { 1: 2, 2: 3, 3: 4 };
     state.level = map[state.level] || 1;
     if (state.task) state.task.level = map[state.task.level] || state.level;
-    if (state.test) state.test.tasks.forEach((t) => (t.level = map[t.level] || state.level));
+    if (state.test)
+      state.test.tasks.forEach((t) => (t.level = map[t.level] || state.level));
     state.version = 2;
   }
   state.level = Math.max(1, Math.min(5, Number(state.level) || 1));
   function ensureKind() {
-    if (state.kind !== "mixed" && (E.minimum[state.category][state.kind] || 1) > state.level)
+    if (
+      state.kind !== "mixed" &&
+      (E.minimum[state.category][state.kind] || 1) > state.level
+    )
       state.kind = "mixed";
   }
   ensureKind();
@@ -66,32 +73,43 @@
   function capture() {
     if (!state.task) return;
     const fields = [...$("m5Fields").querySelectorAll("input")];
-    if (fields.length === state.task.fields.length) state.task.draft = fields.map((x) => x.value);
+    if (fields.length === state.task.fields.length)
+      state.task.draft = fields.map((x) => x.value);
     state.task.notes = $("m5Notes").value;
     persist();
   }
   function saveReport(task = state.task) {
     if (
       !task ||
-      (!task.submissions.length && !task.notes.trim() && !task.draft.some((x) => x.trim()))
+      (!task.submissions.length &&
+        !task.notes.trim() &&
+        !task.draft.some((x) => x.trim()))
     )
       return;
     const texts = [
       {
         label: "Uppgift",
-        text: task.prompt + (task.context.length ? "\n" + task.context.join("\n") : ""),
+        text:
+          task.prompt +
+          (task.context.length ? "\n" + task.context.join("\n") : ""),
       },
     ];
-    if (task.notes.trim()) texts.push({ label: "Mellanled och resonemang", text: task.notes });
+    if (task.notes.trim())
+      texts.push({ label: "Mellanled och resonemang", text: task.notes });
     task.submissions.forEach((submission, i) => {
       texts.push({
         label: "Svar " + (i + 1),
         text:
-          task.fields.map((f, j) => f.label + ": " + submission.values[j]).join("\n") +
+          task.fields
+            .map((f, j) => f.label + ": " + submission.values[j])
+            .join("\n") +
           (submission.grade
             ? "\nRättning: " +
               submission.grade
-                .map((ok, j) => task.fields[j].label + ": " + (ok ? "rätt" : "granska"))
+                .map(
+                  (ok, j) =>
+                    task.fields[j].label + ": " + (ok ? "rätt" : "granska"),
+                )
                 .join(" · ")
             : ""),
       });
@@ -99,9 +117,12 @@
     if (!task.submissions.length && task.draft.some((x) => x.trim()))
       texts.push({
         label: "Påbörjat svar",
-        text: task.fields.map((f, i) => f.label + ": " + (task.draft[i] || "—")).join("\n"),
+        text: task.fields
+          .map((f, i) => f.label + ": " + (task.draft[i] || "—"))
+          .join("\n"),
       });
-    if (task.solutionSeen) texts.push({ label: "Lösningsförslag", text: task.solution.join("\n") });
+    if (task.solutionSeen)
+      texts.push({ label: "Lösningsförslag", text: task.solution.join("\n") });
     if (task.reasoning)
       texts.push({
         label: "Bevis",
@@ -124,17 +145,21 @@
   function options() {
     const select = $("m5Kind");
     select.replaceChildren();
-    [["mixed", "Blandade övningar"], ...Object.entries(C[state.category].types)].forEach(
-      ([value, title]) => {
-        const option = document.createElement("option");
-        option.value = value;
-        const minimum = E.minimum[state.category][value] || 1;
-        option.textContent =
-          title + (value !== "mixed" && minimum > state.level ? " · från nivå " + minimum : "");
-        option.disabled = value !== "mixed" && minimum > state.level;
-        select.append(option);
-      },
-    );
+    [
+      ["mixed", "Blandade övningar"],
+      ...Object.entries(C[state.category].types),
+    ].forEach(([value, title]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      const minimum = E.minimum[state.category][value] || 1;
+      option.textContent =
+        title +
+        (value !== "mixed" && minimum > state.level
+          ? " · från nivå " + minimum
+          : "");
+      option.disabled = value !== "mixed" && minimum > state.level;
+      select.append(option);
+    });
     select.value = state.kind;
     $("m5Level").value = String(state.level);
   }
@@ -170,11 +195,14 @@
       const button = document.createElement("button"),
         title = document.createElement("strong"),
         sub = document.createElement("span");
-      button.className = "course-topic" + (state.category === id ? " selected" : "");
+      button.className =
+        "course-topic" + (state.category === id ? " selected" : "");
       button.setAttribute("aria-pressed", String(state.category === id));
       title.textContent = cat.title;
       const p = state.progress[id];
-      sub.textContent = p?.solved ? p.solved + " lösta · " + cat.desc : cat.desc;
+      sub.textContent = p?.solved
+        ? p.solved + " lösta · " + cat.desc
+        : cat.desc;
       button.append(title, sub);
       button.onclick = () => changeCategory(id);
       root.append(button);
@@ -220,16 +248,36 @@
         });
         el(
           "text",
-          { x: (x1 + x2) / 2, y: (y1 + y2) / 2 + 5, "text-anchor": "middle", fill: "#242424" },
+          {
+            x: (x1 + x2) / 2,
+            y: (y1 + y2) / 2 + 5,
+            "text-anchor": "middle",
+            fill: "#242424",
+          },
           w,
         );
       });
       Object.entries(pos).forEach(([name, [cx, cy]]) => {
-        el("circle", { cx, cy, r: 17, fill: "#fff", stroke: "#242424", "stroke-width": 1.5 });
+        el("circle", {
+          cx,
+          cy,
+          r: 17,
+          fill: "#fff",
+          stroke: "#242424",
+          "stroke-width": 1.5,
+        });
         el("text", { x: cx, y: cy + 5, "text-anchor": "middle" }, name);
       });
     } else {
-      el("rect", { x: 8, y: 8, width: 344, height: 174, rx: 5, fill: "#fff", stroke: "#ddd" });
+      el("rect", {
+        x: 8,
+        y: 8,
+        width: 344,
+        height: 174,
+        rx: 5,
+        fill: "#fff",
+        stroke: "#ddd",
+      });
       el("circle", {
         cx: 142,
         cy: 99,
@@ -280,11 +328,14 @@
     $("m5TaskNumber").textContent = test
       ? "Uppgift " + Math.min(state.test.index + 1, 10) + " / 10"
       : "Uppgift " + state.number;
-    $("m5TestProgress").textContent = Math.min(state.test?.index || 0, 10) + " av 10 sparade";
+    $("m5TestProgress").textContent =
+      Math.min(state.test?.index || 0, 10) + " av 10 sparade";
     $("m5Workspace").hidden = complete || !!state.test?.graded;
     $("m5TestSummary").hidden = !complete && !state.test?.graded;
-    $("m5Solution").hidden = !task?.solutionSeen || test || !!state.test?.graded;
-    $("m5HintText").hidden = !task?.hinted || test || !window.GaussApi.autoGrade();
+    $("m5Solution").hidden =
+      !task?.solutionSeen || test || !!state.test?.graded;
+    $("m5HintText").hidden =
+      !task?.hinted || test || !window.GaussApi.autoGrade();
   }
   function render() {
     ensureKind();
@@ -328,7 +379,8 @@
           : field.type === "digits"
             ? "Skriv siffrorna"
             : "Tal eller bråk";
-      if (task.grade && !testing()) input.className = task.grade[index] ? "correct" : "wrong";
+      if (task.grade && !testing())
+        input.className = task.grade[index] ? "correct" : "wrong";
       input.oninput = () => {
         task.draft[index] = input.value;
         task.grade = null;
@@ -353,7 +405,9 @@
       if (task.grade && !testing()) {
         const status = document.createElement("small");
         status.className = "m5-field-status";
-        status.textContent = task.grade[index] ? "Stämmer" : "Kontrollera det här svaret";
+        status.textContent = task.grade[index]
+          ? "Stämmer"
+          : "Kontrollera det här svaret";
         label.append(status);
       }
       $("m5Fields").append(label);
@@ -388,7 +442,10 @@
           : "",
       task.grade ? (task.solved ? "good" : "bad") : "",
     );
-    const progress = Object.values(state.progress).reduce((sum, p) => sum + p.solved, 0);
+    const progress = Object.values(state.progress).reduce(
+      (sum, p) => sum + p.solved,
+      0,
+    );
     $("m5Progress").textContent =
       progress + " lösta uppgifter i Matematik 5 · sparas på den här enheten";
     controls();
@@ -416,7 +473,10 @@
     window.GaussApi.addPoints(
       Math.max(
         10,
-        30 + task.level * 10 - (task.submissions.length - 1) * 5 - (task.hinted ? 7 : 0),
+        30 +
+          task.level * 10 -
+          (task.submissions.length - 1) * 5 -
+          (task.hinted ? 7 : 0),
       ),
     );
   }
@@ -428,7 +488,12 @@
     saveReport(task);
   }
   function submit(force = false) {
-    if (!state.task || state.task.solved || (testing() && state.test.index >= 10)) return;
+    if (
+      !state.task ||
+      state.task.solved ||
+      (testing() && state.test.index >= 10)
+    )
+      return;
     capture();
     const task = state.task;
     try {
@@ -438,12 +503,16 @@
       return;
     }
     const previous = task.submissions.at(-1);
-    if (!force || JSON.stringify(previous?.values) !== JSON.stringify(task.draft))
+    if (
+      !force ||
+      JSON.stringify(previous?.values) !== JSON.stringify(task.draft)
+    )
       task.submissions.push({ values: [...task.draft], grade: null });
     if (testing()) {
       saveReport(task);
       state.test.index++;
-      if (state.test.index < 10) state.task = state.test.tasks[state.test.index];
+      if (state.test.index < 10)
+        state.task = state.test.tasks[state.test.index];
       persist();
       render();
       return;
@@ -482,8 +551,13 @@
         const j = Math.floor(Math.random() * (i + 1));
         [order[i], order[j]] = [order[j], order[i]];
       }
-      while (order.length < 10) order.push(ids[Math.floor(Math.random() * ids.length)]);
-      state.test = { index: 0, graded: false, tasks: order.map((id) => fresh(id, "mixed")) };
+      while (order.length < 10)
+        order.push(ids[Math.floor(Math.random() * ids.length)]);
+      state.test = {
+        index: 0,
+        graded: false,
+        tasks: order.map((id) => fresh(id, "mixed")),
+      };
       state.task = state.test.tasks[0];
       state.retry = [];
       persist();
@@ -686,7 +760,7 @@
     persist();
   });
   window.addEventListener("workreviewbefore", () => {
-    if ($("topic").value === "math5") capture();
+    if (document.body.dataset.topic === "math5") capture();
     saveReport();
     if (state.test) state.test.tasks.forEach(saveReport);
   });

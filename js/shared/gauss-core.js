@@ -2,7 +2,10 @@
   "use strict";
 
   const root = typeof window !== "undefined" ? window : globalThis;
-  const randomInt = root.GaussShared?.randomInt || ((min, max, rng = Math.random) => min + Math.floor(rng() * (max - min + 1)));
+  const randomInt =
+    root.GaussShared?.randomInt ||
+    ((min, max, rng = Math.random) =>
+      min + Math.floor(rng() * (max - min + 1)));
 
   const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a) || 1);
 
@@ -30,7 +33,9 @@
   function parse(value) {
     const s = String(value).trim().replaceAll("−", "-");
     if (!/^[+-]?\d+(\/[+-]?\d+)?$/.test(s))
-      throw Error("Fyll i varje fält med ett heltal eller bråk, till exempel −3/2.");
+      throw Error(
+        "Fyll i varje fält med ett heltal eller bråk, till exempel −3/2.",
+      );
     const [a, b = "1"] = s.split("/");
     return frac(Number(a), Number(b));
   }
@@ -45,7 +50,10 @@
     if (a.length === 2) return a[0][0] * a[1][1] - a[0][1] * a[1][0];
     return a[0].reduce(
       (total, x, j) =>
-        total + (j % 2 ? -1 : 1) * x * det(a.slice(1).map((r) => r.filter((_, k) => k !== j))),
+        total +
+        (j % 2 ? -1 : 1) *
+          x *
+          det(a.slice(1).map((r) => r.filter((_, k) => k !== j))),
       0,
     );
   }
@@ -71,11 +79,15 @@
       );
     if (difficulty === 1) {
       a = Array.from({ length: size }, (_, i) =>
-        Array.from({ length: size }, (_, j) => (i === j ? 1 : j > i ? randomInt(0, 2, rng) : 0)),
+        Array.from({ length: size }, (_, j) =>
+          i === j ? 1 : j > i ? randomInt(0, 2, rng) : 0,
+        ),
       );
       a[0][1] = 1;
     }
-    const x = Array.from({ length: size }, () => randomInt(difficulty === 1 ? 1 : -limit, limit, rng));
+    const x = Array.from({ length: size }, () =>
+      randomInt(difficulty === 1 ? 1 : -limit, limit, rng),
+    );
     const right =
       kind === "solve"
         ? a.map((row) => [row.reduce((sum, v, j) => sum + v * x[j], 0)])
@@ -120,6 +132,16 @@
   };
 
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { frac, plus, times, parse, equals, format, det, makePuzzle, invertible };
+    module.exports = {
+      frac,
+      plus,
+      times,
+      parse,
+      equals,
+      format,
+      det,
+      makePuzzle,
+      invertible,
+    };
   }
 })();

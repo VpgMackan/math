@@ -18,7 +18,9 @@
   };
   const mod = (a, m) => ((a % m) + m) % m;
   const fmt = (n) =>
-    Number.isInteger(n) ? String(n) : Number(n.toFixed(6)).toString().replace(".", ",");
+    Number.isInteger(n)
+      ? String(n)
+      : Number(n.toFixed(6)).toString().replace(".", ",");
   const setText = (a) => "{" + a.join(", ") + "}",
     range = (n) => Array.from({ length: n }, (_, i) => i + 1);
   const categories = {
@@ -64,7 +66,11 @@
       title: "Talbaser",
       desc: "Positionssystem och omvandling",
       rule: "I bas b är platsvärdena 1, b, b², b³, … från höger. Till bas tio: summera siffra × platsvärde. Från bas tio: dividera upprepade gånger med b och läs resterna baklänges. I bas 16 står A–F för 10–15.",
-      types: { toDecimal: "Till bas tio", fromDecimal: "Från bas tio", between: "Mellan talbaser" },
+      types: {
+        toDecimal: "Till bas tio",
+        fromDecimal: "Från bas tio",
+        between: "Mellan talbaser",
+      },
     },
     sequences: {
       title: "Talföljder och rekursion",
@@ -125,15 +131,29 @@
       },
     },
   };
-  const field = (label, answer, type = "number", extra = {}) => ({ label, answer, type, ...extra });
+  const field = (label, answer, type = "number", extra = {}) => ({
+    label,
+    answer,
+    type,
+    ...extra,
+  });
   const levels = {
     1: {
       name: "Nybörjare",
       description: "Små tal och ett tydligt första steg. Ta hjälp av exemplet.",
     },
-    2: { name: "Grund", description: "En metod i taget. Öva tills begreppen känns bekanta." },
-    3: { name: "Fortsättning", description: "Flera beräkningar och fler typer av uppgifter." },
-    4: { name: "Utmaning", description: "Kombinera metoder och hantera extra villkor." },
+    2: {
+      name: "Grund",
+      description: "En metod i taget. Öva tills begreppen känns bekanta.",
+    },
+    3: {
+      name: "Fortsättning",
+      description: "Flera beräkningar och fler typer av uppgifter.",
+    },
+    4: {
+      name: "Utmaning",
+      description: "Kombinera metoder och hantera extra villkor.",
+    },
     5: {
       name: "Fördjupning",
       description: "Sammansatta problem och större krav på eget resonemang.",
@@ -159,9 +179,22 @@
     },
     congruence: { remainder: 1, power: 2, equation: 3, inverse: 4 },
     bases: { toDecimal: 1, fromDecimal: 2, between: 3 },
-    sequences: { arithmetic: 1, geometric: 2, recurrence: 3, second: 3, sum: 4 },
+    sequences: {
+      arithmetic: 1,
+      geometric: 2,
+      recurrence: 3,
+      second: 3,
+      sum: 4,
+    },
     proofs: { sum: 1, odd: 2, divisibility: 3, contradiction: 4 },
-    differential: { verify: 1, exponential: 2, linear: 3, euler: 3, model: 3, secondOrder: 4 },
+    differential: {
+      verify: 1,
+      exponential: 2,
+      linear: 3,
+      euler: 3,
+      model: 3,
+      secondOrder: 4,
+    },
     calculus: { area: 1, productDerivative: 2, integration: 4 },
     graphs: { degrees: 1, trees: 1, complete: 2, euler: 3, shortest: 4 },
   };
@@ -226,7 +259,9 @@
       return v;
     }
     if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(s))
-      throw Error("Skriv ett tal, decimal eller bråk, till exempel 0,5 eller 1/2.");
+      throw Error(
+        "Skriv ett tal, decimal eller bråk, till exempel 0,5 eller 1/2.",
+      );
     const value = Number(s);
     if (!Number.isFinite(value)) throw Error("Talet är för stort.");
     return value;
@@ -238,18 +273,23 @@
     if (s.startsWith("{") && s.endsWith("}")) s = s.slice(1, -1).trim();
     if (!s) return [];
     if (!/^[+−\-\d,;\s]+$/.test(s))
-      throw Error("Skriv heltal åtskilda med kommatecken, till exempel {1, 2, 3}.");
+      throw Error(
+        "Skriv heltal åtskilda med kommatecken, till exempel {1, 2, 3}.",
+      );
     const tokens = s
       .replaceAll("−", "-")
       .split(/[,;\s]+/)
       .filter(Boolean);
-    if (!tokens.every((x) => /^[+-]?\d+$/.test(x))) throw Error("Mängden ska innehålla heltal.");
+    if (!tokens.every((x) => /^[+-]?\d+$/.test(x)))
+      throw Error("Mängden ska innehålla heltal.");
     const values = tokens.map(Number);
-    if (values.some((x) => !Number.isSafeInteger(x))) throw Error("Talet är för stort.");
+    if (values.some((x) => !Number.isSafeInteger(x)))
+      throw Error("Talet är för stort.");
     return [...new Set(values)].sort((a, b) => a - b);
   }
   function assess(task, values) {
-    if (values.length !== task.fields.length) throw Error("Fyll i alla svarsfält.");
+    if (values.length !== task.fields.length)
+      throw Error("Fyll i alla svarsfält.");
     return task.fields.map((f, i) => {
       if (f.type === "set")
         return (
@@ -258,7 +298,8 @@
         );
       if (f.type === "digits") {
         const v = String(values[i]).trim().toUpperCase();
-        if (!/^[0-9A-F]+$/.test(v)) throw Error("Skriv talets siffror utan bas eller index.");
+        if (!/^[0-9A-F]+$/.test(v))
+          throw Error("Skriv talets siffror utan bas eller index.");
         return v.replace(/^0+(?=.)/, "") === f.answer;
       }
       const value = parseNumber(values[i]);

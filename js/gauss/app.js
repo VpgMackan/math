@@ -1,5 +1,4 @@
 (() => {
-  "use strict";
   const { $, seeded, dateKey, hash, storage } = window.GaussShared;
   const {
     frac,
@@ -18,7 +17,14 @@
     invertible,
   } = window.GaussCore;
   const storeKey = "gausskamp-v4";
-  const initialStats = { score: 0, solved: 0, bestStreak: 0, streak: 0, fastest: null, daily: {} };
+  const initialStats = {
+    score: 0,
+    solved: 0,
+    bestStreak: 0,
+    streak: 0,
+    fastest: null,
+    daily: {},
+  };
   let stats = { ...initialStats },
     game = {
       mode: "practice",
@@ -47,17 +53,55 @@
   try {
     const saved = storage.readJson(storeKey, null);
     if (saved?.stats) {
-      stats = { ...initialStats, ...saved.stats, daily: saved.stats.daily || {} };
+      stats = {
+        ...initialStats,
+        ...saved.stats,
+        daily: saved.stats.daily || {},
+      };
       if (
         saved.game &&
         ["practice", "daily", "custom"].includes(saved.game.mode) &&
         Array.isArray(saved.game.matrix)
       ) {
-        game = { ...game, ...saved.game, deadline: null, paused: false, over: false };
+        game = {
+          ...game,
+          ...saved.game,
+          deadline: null,
+          paused: false,
+          over: false,
+        };
       }
     } else {
       stats.score = Number(storage.readString("gauss_score", "0")) || 0;
       stats.bestStreak = Number(storage.readString("gauss_best", "0")) || 0;
+    }
+  } catch {}
+  try {
+    const handoff = JSON.parse(
+      sessionStorage.getItem("gausskamp-gauss-handoff"),
+    );
+    if (handoff?.game && Array.isArray(handoff.game.matrix)) {
+      const handedGame = handoff.game;
+      if (handedGame.mode === "daily" && handedGame.date !== dateKey()) {
+        sessionStorage.removeItem("gausskamp-gauss-handoff");
+        throw new Error("Stale daily handoff");
+      }
+      if (handedGame.mode === "challenge" && handedGame.remaining <= 0) {
+        sessionStorage.removeItem("gausskamp-gauss-handoff");
+        throw new Error("Expired challenge handoff");
+      }
+      stats = {
+        ...initialStats,
+        ...handoff.stats,
+        daily: handoff.stats?.daily || {},
+      };
+      game = {
+        ...game,
+        ...handedGame,
+        deadline: null,
+        paused: handedGame.mode === "challenge",
+      };
+      sessionStorage.removeItem("gausskamp-gauss-handoff");
     }
   } catch {}
   let timerId = null,
@@ -90,7 +134,9 @@
     game.matrix[row].forEach((_, col) => {
       const input = document.createElement("input");
       input.type = "text";
-      input.inputMode = window.matchMedia("(pointer:coarse)").matches ? "decimal" : "text";
+      input.inputMode = window.matchMedia("(pointer:coarse)").matches
+        ? "decimal"
+        : "text";
       input.autocomplete = "off";
       input.spellcheck = false;
       input.placeholder = "·";
@@ -105,7 +151,9 @@
   function stashDraft() {
     const row = Number($("editRow").value);
     game.drafts ??= {};
-    game.drafts[row] = [...$("entryGrid").querySelectorAll("input")].map((input) => input.value);
+    game.drafts[row] = [...$("entryGrid").querySelectorAll("input")].map(
+      (input) => input.value,
+    );
     save();
   }
   function showCurrentRow(row) {
@@ -147,7 +195,11 @@
     const hasDraft = Object.values(game.drafts || {}).some((row) =>
       row.some((value) => value.trim()),
     );
-    if (force ?? (!game.done && (game.steps.length || hasDraft || game.mode === "challenge"))) {
+    if (
+      force ??
+      (!game.done &&
+        (game.steps.length || hasDraft || game.mode === "challenge"))
+    ) {
       pendingReplace = action;
       openSecondary("confirmOverlay");
     } else action();
@@ -194,7 +246,8 @@
     $("undoButton").disabled = !game.history.length || !active();
     $("hintButton").disabled = !active();
     $("submitButton").disabled = !active();
-    $("hearts").textContent = "♥ ".repeat(game.lives) + "♡ ".repeat(3 - game.lives);
+    $("hearts").textContent =
+      "♥ ".repeat(game.lives) + "♡ ".repeat(3 - game.lives);
     $("hearts").setAttribute("aria-label", game.lives + " av 3 liv kvar");
     $("roundInfo").textContent = "RUNDA " + game.round + " / 3";
     updateTimer();
@@ -204,7 +257,8 @@
     $("size").disabled = game.mode !== "practice";
     $("gameTitle").textContent =
       game.method === "solve" ? "Lös ekvationssystemet" : "Hitta inversen";
-    $("matrixType").textContent = game.method === "solve" ? "[ A | b ]" : "[ A | I ]";
+    $("matrixType").textContent =
+      game.method === "solve" ? "[ A | b ]" : "[ A | I ]";
     $("goal").textContent =
       game.method === "solve"
         ? "Mål: få [ I | x ]. Lösningen står då till höger."
@@ -234,7 +288,7 @@
             ? "Din uppgift"
             : "Ingen tidsgräns";
     $("challengeHud").hidden = game.mode !== "challenge";
-    $("newButton").innerHTML =
+    $("newButton").textContent =
       game.mode === "challenge"
         ? game.done && !game.over
           ? "Nästa runda"
@@ -246,7 +300,9 @@
             : "Ny uppgift";
     document
       .querySelectorAll(".mode[data-mode]")
-      .forEach((b) => b.classList.toggle("active", b.dataset.mode === game.mode));
+      .forEach((b) =>
+        b.classList.toggle("active", b.dataset.mode === game.mode),
+      );
   }
   function resetBoard(matrix) {
     recordWork();
@@ -283,7 +339,9 @@
     game.size = Number($("size").value);
     game.difficulty = Number($("gaussDifficulty").value) || 1;
     if (newTask) game.taskNo++;
-    resetBoard(makePuzzle(game.size, game.method, Math.random, game.difficulty));
+    resetBoard(
+      makePuzzle(game.size, game.method, Math.random, game.difficulty),
+    );
   }
   function challenge() {
     stopTimer();
@@ -312,7 +370,12 @@
     game.method = rng() < 0.67 ? "solve" : "inverse";
     resetBoard(makePuzzle(game.size, game.method, rng));
     const record = stats.daily[game.date];
-    if (record) feedback("Dagens bästa: " + record.steps + " steg. Du kan försöka förbättra det.");
+    if (record)
+      feedback(
+        "Dagens bästa: " +
+          record.steps +
+          " steg. Du kan försöka förbättra det.",
+      );
   }
   function custom(matrix, size, method) {
     stopTimer();
@@ -324,7 +387,9 @@
   function updateTimer() {
     const total = Math.max(0, Math.ceil(game.remaining / 1000));
     $("timer").textContent =
-      String(Math.floor(total / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+      String(Math.floor(total / 60)).padStart(2, "0") +
+      ":" +
+      String(total % 60).padStart(2, "0");
   }
   function startTimer() {
     clearInterval(timerId);
@@ -369,22 +434,33 @@
     stats.solved++;
     stats.streak++;
     stats.bestStreak = Math.max(stats.bestStreak, stats.streak);
-    let earned = Math.max(20, 120 - game.steps.length * 7 - game.hints * 9 - game.mistakes * 5);
+    let earned = Math.max(
+      20,
+      120 - game.steps.length * 7 - game.hints * 9 - game.mistakes * 5,
+    );
     if (game.mode === "challenge") earned += 35;
     if (game.mode === "daily") {
       const prior = stats.daily[game.date];
       if (prior && prior.steps <= game.steps.length) earned = 0;
-      else stats.daily[game.date] = { steps: game.steps.length, date: game.date };
+      else
+        stats.daily[game.date] = { steps: game.steps.length, date: game.date };
     }
     stats.score += earned;
     save();
     render();
-    let result =
+    const result =
       game.method === "solve"
-        ? game.matrix.map((r, i) => `x${i + 1} = ${format(r[game.size])}`).join("   ·   ")
-        : game.matrix.map((r) => "[" + r.slice(game.size).map(format).join(", ") + "]").join(" ");
+        ? game.matrix
+            .map((r, i) => `x${i + 1} = ${format(r[game.size])}`)
+            .join("   ·   ")
+        : game.matrix
+            .map((r) => "[" + r.slice(game.size).map(format).join(", ") + "]")
+            .join(" ");
     feedback(
-      "Löst! " + (earned ? "+" + earned + " poäng." : "Du förbättrade inte dagens rekord."),
+      "Löst! " +
+        (earned
+          ? "+" + earned + " poäng."
+          : "Du förbättrade inte dagens rekord."),
       "win",
     );
     if (game.mode === "challenge" && game.round === 3) {
@@ -393,7 +469,9 @@
     }
     showResult(
       game.mode === "challenge" ? "RUNDA KLAR" : "UPPGIFT KLAR",
-      game.mode === "challenge" ? `Runda ${game.round} av 3 avklarad.` : "Snyggt räknat.",
+      game.mode === "challenge"
+        ? `Runda ${game.round} av 3 avklarad.`
+        : "Snyggt räknat.",
       `${game.steps.length} steg · ${game.hints} ledtrådar · ${earned} poäng`,
       result,
       game.mode === "challenge" ? "Nästa runda" : "Nästa uppgift",
@@ -415,11 +493,15 @@
     timerId = null;
     if (won) {
       const used = Math.ceil((360000 - game.remaining) / 1000);
-      stats.fastest = stats.fastest === null ? used : Math.min(stats.fastest, used);
+      stats.fastest =
+        stats.fastest === null ? used : Math.min(stats.fastest, used);
     } else stats.streak = 0;
     save();
     render();
-    feedback(won ? "Tre av tre lösta!" : "Tiden eller liven tog slut.", won ? "win" : "bad");
+    feedback(
+      won ? "Tre av tre lösta!" : "Tiden eller liven tog slut.",
+      won ? "win" : "bad",
+    );
     showResult(
       "TIDSKAMP",
       won ? "Du klarade alla tre." : "Försök igen.",
@@ -437,7 +519,7 @@
     $("resultText").textContent = text;
     $("resultSolution").hidden = !solution;
     if (solution) $("resultSolution").textContent = solution;
-    $("resultNext").innerHTML = label + "";
+    $("resultNext").textContent = label;
     $("resultNext").onclick = () => {
       close("resultOverlay");
       callback();
@@ -446,7 +528,8 @@
   }
   function move(row, values) {
     const old = game.matrix[row];
-    if (sameRow(values, old)) throw Error("Raden är oförändrad. Gör ett nytt steg.");
+    if (sameRow(values, old))
+      throw new Error("Raden är oförändrad. Gör ett nytt steg.");
     for (let i = 0; i < game.size; i++)
       if (i !== row && sameRow(values, game.matrix[i]))
         return {
@@ -508,7 +591,10 @@
               return { valid: true, label: step.label };
           } catch {}
         }
-        return { valid: false, label: "Steget följer inte av en giltig radoperation." };
+        return {
+          valid: false,
+          label: "Steget följer inte av en giltig radoperation.",
+        };
       });
     } finally {
       game.matrix = current;
@@ -524,7 +610,11 @@
         game.method === "solve"
           ? "Gausselimination · ekvationssystem"
           : "Gausselimination · invers",
-      status: game.done ? "Avslutad" : game.review ? "Rättad · se stegen" : "Ej sluträttad",
+      status: game.done
+        ? "Avslutad"
+        : game.review
+          ? "Rättad · se stegen"
+          : "Ej sluträttad",
       matrices: [
         { label: "Ursprunglig matris", values: fm(game.initial) },
         ...game.steps.map((label, i) => ({
@@ -550,11 +640,22 @@
     game.review = audit();
     save();
     render();
-    const bad = game.review.map((r, i) => (r.valid ? null : i + 1)).filter(Boolean);
+    const bad = game.review
+      .map((r, i) => (r.valid ? null : i + 1))
+      .filter(Boolean);
     if (bad.length)
-      feedback("Granska steg " + bad.join(", ") + ". Visa arbetet för att se rättningen.", "bad");
+      feedback(
+        "Granska steg " +
+          bad.join(", ") +
+          ". Visa arbetet för att se rättningen.",
+        "bad",
+      );
     else if (solved()) outcome();
-    else feedback("Alla steg är giltiga. Vänster sida är ännu inte identitetsmatrisen.", "good");
+    else
+      feedback(
+        "Alla steg är giltiga. Vänster sida är ännu inte identitetsmatrisen.",
+        "good",
+      );
   }
   $("gradeGauss").onclick = gradeAll;
   window.addEventListener("gradingchange", () => {
@@ -572,7 +673,9 @@
         const delta = values.map((x, j) => plus(x, negative(old[j]))),
           k = ratio(delta, game.matrix[i]);
         if (k && !isZero(k))
-          candidates.push(old.map((x, j) => plus(x, times(k, game.matrix[i][j]))));
+          candidates.push(
+            old.map((x, j) => plus(x, times(k, game.matrix[i][j]))),
+          );
       }
     const f = ratio(values, old);
     if (f && !isZero(f)) candidates.push(old.map((x) => times(f, x)));
@@ -597,7 +700,7 @@
     try {
       values = inputs.map((x) => parse(x.value));
       if (values.some((x) => Math.abs(x[0]) > 100000 || x[1] > 10000))
-        throw Error("Talen är för stora. Prova ett mindre steg.");
+        throw new Error("Talen är för stora. Prova ett mindre steg.");
       inputs.forEach((x) => x.classList.remove("wrong"));
     } catch (e) {
       feedback(e.message, "bad");
@@ -611,7 +714,8 @@
         if (i !== row && sameRow(values, game.matrix[i])) swap = i;
       if (swap >= 0) game.matrix[swap] = before[row];
       game.matrix[row] = values;
-      const label = swap >= 0 ? `R${row + 1} ↔ R${swap + 1}` : `R${row + 1} uppdaterad`;
+      const label =
+        swap >= 0 ? `R${row + 1} ↔ R${swap + 1}` : `R${row + 1} uppdaterad`;
       game.history.push({ matrix: before, label });
       game.steps.push(label);
       game.review = null;
@@ -653,7 +757,8 @@
     step.apply();
     game.drafts ??= {};
     game.matrix.forEach((r, i) => {
-      if (!sameRow(r, game.history[game.history.length - 1].matrix[i])) delete game.drafts[i];
+      if (!sameRow(r, game.history[game.history.length - 1].matrix[i]))
+        delete game.drafts[i];
     });
     game.steps.push(step.label);
     game.hintLevel = 0;
@@ -667,7 +772,9 @@
       else {
         save();
         render();
-        feedback("Slutraden är klar. Rätta hela lösningen för att granska tidigare steg.");
+        feedback(
+          "Slutraden är klar. Rätta hela lösningen för att granska tidigare steg.",
+        );
       }
     } else focusNextRow();
   }
@@ -678,7 +785,7 @@
       if (m.every((row, r) => equals(row[c], frac(r === c ? 1 : 0)))) continue;
       const pivot = m[c][c];
       if (isZero(pivot)) {
-        let source = m.findIndex((row, i) => i !== c && !isZero(row[c]));
+        const source = m.findIndex((row, i) => i !== c && !isZero(row[c]));
         if (source >= 0)
           return {
             row: c,
@@ -729,7 +836,9 @@
         (input, j) => (input.value = format(s.values[j])),
       );
       stashDraft();
-      feedback("Ledtråd 3/3: Ett möjligt nästa steg är ifyllt. Kontrollera raden när du är redo.");
+      feedback(
+        "Ledtråd 3/3: Ett möjligt nästa steg är ifyllt. Kontrollera raden när du är redo.",
+      );
     }
     save();
   }
@@ -744,7 +853,18 @@
     $(id).hidden = true;
     document.body.style.overflow = "";
     modalReturn?.focus();
-    if (modalWasPaused && game.mode === "challenge" && game.paused) {
+    if (
+      modalWasPaused &&
+      game.mode === "challenge" &&
+      game.paused &&
+      ![
+        "helpOverlay",
+        "statsOverlay",
+        "confirmOverlay",
+        "customOverlay",
+        "resultOverlay",
+      ].some((overlayId) => !$(overlayId).hidden)
+    ) {
       modalWasPaused = false;
       resume();
     }
@@ -782,16 +902,29 @@
     try {
       const size = Number($("customSize").value),
         method = $("customMethod").value;
-      const rows = [...$("customGrid").querySelectorAll(".custom-row")].map((row) =>
-        [...row.querySelectorAll("input")].map((input) => parse(input.value)),
+      const rows = [...$("customGrid").querySelectorAll(".custom-row")].map(
+        (row) =>
+          [...row.querySelectorAll("input")].map((input) => parse(input.value)),
       );
       const a = rows.map((row) => row.slice(0, size));
-      if (rows.some((row) => row.some((x) => Math.abs(x[0]) > 1000 || x[1] > 1000)))
-        throw Error("Använd mindre tal i den egna matrisen.");
+      if (
+        rows.some((row) =>
+          row.some((x) => Math.abs(x[0]) > 1000 || x[1] > 1000),
+        )
+      )
+        throw new Error("Använd mindre tal i den egna matrisen.");
       if (!invertible(a))
-        throw Error("Koefficientmatrisen är inte inverterbar. Ändra något tal och försök igen.");
-      if (a.every((row, i) => row.every((x, j) => equals(x, frac(i === j ? 1 : 0)))))
-        throw Error("Vänster sida är redan I. Välj en matris som behöver reduceras.");
+        throw new Error(
+          "Koefficientmatrisen är inte inverterbar. Ändra något tal och försök igen.",
+        );
+      if (
+        a.every((row, i) =>
+          row.every((x, j) => equals(x, frac(i === j ? 1 : 0))),
+        )
+      )
+        throw new Error(
+          "Vänster sida är redan I. Välj en matris som behöver reduceras.",
+        );
       const full =
         method === "inverse"
           ? a.map((r, i) => [
@@ -806,17 +939,9 @@
       $("customError").textContent = e.message;
     }
   }
-  function statsModal() {
-    $("statSolved").textContent = stats.solved;
-    $("statBest").textContent = stats.bestStreak;
-    $("statChallenge").textContent =
-      stats.fastest === null
-        ? "—"
-        : Math.floor(stats.fastest / 60) + ":" + String(stats.fastest % 60).padStart(2, "0");
-    $("statDaily").textContent = stats.daily[dateKey()]?.steps ?? "—";
-    openSecondary("statsOverlay");
-  }
   function restore() {
+    if (game.mode === "challenge" && game.paused)
+      $("pauseOverlay").hidden = false;
     if (game.mode === "daily" && game.date !== dateKey()) {
       daily();
       return;
@@ -841,7 +966,9 @@
     render();
     fillEntry();
     feedback(
-      game.done ? "Uppgiften är löst. Välj en ny uppgift." : "Du fortsätter där du slutade.",
+      game.done
+        ? "Uppgiften är löst. Välj en ny uppgift."
+        : "Du fortsätter där du slutade.",
     );
     if (game.done) {
       $("submitButton").disabled = true;
@@ -938,7 +1065,13 @@
   $("pauseButton").onclick = () => pause();
   $("resumeButton").onclick = resume;
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && game.mode === "challenge" && !game.paused && !game.over) pause();
+    if (
+      document.hidden &&
+      game.mode === "challenge" &&
+      !game.paused &&
+      !game.over
+    )
+      pause();
   });
   $("customButton").onclick = () =>
     requestReplace(() => {
@@ -949,10 +1082,11 @@
   $("customSize").onchange = buildCustom;
   $("startCustom").onclick = startCustom;
   $("customClose").onclick = () => close("customOverlay");
-  $("helpButton").onclick = () => openSecondary("helpOverlay");
   $("helpClose").onclick = $("helpDone").onclick = () => close("helpOverlay");
-  $("statsButton").onclick = statsModal;
-  $("statsClose").onclick = $("statsDone").onclick = () => close("statsOverlay");
+  $("statsClose").onclick = $("statsDone").onclick = () =>
+    close("statsOverlay");
+  $("helpButton").onclick = () => window.GaussGame.showHelp();
+  $("statsButton").onclick = () => window.GaussGame.showStats();
   $("resultClose").onclick = () => close("resultOverlay");
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -980,7 +1114,9 @@
   };
   $("entryGrid").addEventListener("input", stashDraft);
   $("entryGrid").addEventListener("focusin", (event) => {
-    lastInputIndex = [...$("entryGrid").querySelectorAll("input")].indexOf(event.target);
+    lastInputIndex = [...$("entryGrid").querySelectorAll("input")].indexOf(
+      event.target,
+    );
   });
   function insertSymbol(symbol) {
     if (!active()) return;
@@ -1011,7 +1147,12 @@
             name,
             title: description,
             description,
-            inputSchema: { type: "object", properties, required, additionalProperties: false },
+            inputSchema: {
+              type: "object",
+              properties,
+              required,
+              additionalProperties: false,
+            },
             annotations: { readOnlyHint: false },
             execute,
           }),
@@ -1028,7 +1169,7 @@
       ["method", "size"],
       ({ method, size }) => {
         if (!["solve", "inverse"].includes(method) || ![2, 3].includes(size))
-          throw Error("Ogiltigt läge eller storlek");
+          throw new Error("Ogiltigt läge eller storlek");
         $("method").value = method;
         $("size").value = String(size);
         practice();
@@ -1038,7 +1179,10 @@
     register(
       "submit_gauss_row",
       "Skriv in en ny matrisrad",
-      { row: { type: "integer" }, values: { type: "array", items: { type: "string" } } },
+      {
+        row: { type: "integer" },
+        values: { type: "array", items: { type: "string" } },
+      },
       ["row", "values"],
       ({ row, values }) => {
         if (
@@ -1049,7 +1193,7 @@
           values.length !== game.matrix[0].length ||
           !values.every((v) => typeof v === "string")
         )
-          throw Error("Ogiltig rad");
+          throw new Error("Ogiltig rad");
         $("editRow").value = String(row - 1);
         render();
         fillEntry();
@@ -1091,6 +1235,40 @@
     pause: () => pause(false),
     resume,
     refresh: render,
+    showStats: () => {
+      $("statSolved").textContent = stats.solved;
+      $("statBest").textContent = stats.bestStreak;
+      $("statChallenge").textContent =
+        stats.fastest === null
+          ? "—"
+          : Math.floor(stats.fastest / 60) +
+            ":" +
+            String(stats.fastest % 60).padStart(2, "0");
+      $("statDaily").textContent = stats.daily[dateKey()]?.steps ?? "—";
+      openSecondary("statsOverlay");
+    },
+    showHelp: () => openSecondary("helpOverlay"),
+    persistHandoff: () => {
+      if (game.mode === "challenge" && game.over) {
+        sessionStorage.removeItem("gausskamp-gauss-handoff");
+        return;
+      }
+      const snapshot = {
+        ...game,
+        remaining:
+          game.mode === "challenge" && !game.paused
+            ? Math.max(0, game.deadline - Date.now())
+            : game.remaining,
+        deadline: null,
+        paused: game.mode === "challenge",
+      };
+      try {
+        sessionStorage.setItem(
+          "gausskamp-gauss-handoff",
+          JSON.stringify({ game: snapshot, stats }),
+        );
+      } catch {}
+    },
     addPoints: (points) => {
       stats.score += points;
       stats.solved++;

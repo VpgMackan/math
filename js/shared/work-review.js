@@ -1,5 +1,6 @@
 (() => {
-  "use strict";
+  
+
   const { $, storage } = window.GaussShared;
   let reports = [],
     auto = true,
@@ -14,7 +15,8 @@
     get auto() {
       return auto;
     },
-    id: () => Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9),
+    id: () =>
+      Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9),
     record(report) {
       const i = reports.findIndex((r) => r.id === report.id);
       if (i < 0) reports.push(report);
@@ -42,7 +44,8 @@
     window.dispatchEvent(new Event("workreviewbefore"));
     returnFocus = document.activeElement;
     shouldResume =
-      !window.GaussGame?.paused &&
+      !!window.GaussGame &&
+      !window.GaussGame.paused &&
       ![
         "resultOverlay",
         "helpOverlay",
@@ -50,7 +53,7 @@
         "customOverlay",
         "pauseOverlay",
         "confirmOverlay",
-      ].some((id) => !$(id).hidden);
+      ].some((id) => $(id) && !$(id).hidden);
     window.GaussGame?.pause();
     const content = $("workReports");
     content.replaceChildren();
@@ -62,7 +65,7 @@
     reports
       .slice()
       .reverse()
-      .forEach((report, index) => {
+      .forEach((report) => {
         const article = document.createElement("article");
         article.className = "work-report";
         const h = document.createElement("h3"),
@@ -111,11 +114,19 @@
   }
   function close() {
     $("reviewOverlay").hidden = true;
-    if (shouldResume) window.GaussGame?.resume();
+    if (
+      shouldResume &&
+      $("resultOverlay")?.hidden &&
+      $("pauseOverlay")?.hidden &&
+      !["helpOverlay", "statsOverlay", "confirmOverlay", "customOverlay"].some(
+        (id) => !$(id).hidden,
+      )
+    )
+      window.GaussGame?.resume();
     returnFocus?.focus();
   }
   $("reviewWork").onclick = show;
-  $("resultReview").onclick = show;
+  $("resultReview")?.addEventListener("click", show);
   $("closeReview").onclick = close;
   $("printWork").onclick = () => window.print();
   $("reviewOverlay").addEventListener("keydown", (event) => {

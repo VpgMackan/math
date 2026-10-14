@@ -1,8 +1,16 @@
 (() => {
   "use strict";
+
   const { $ } = window.GaussShared,
     math = window.GaussMath;
-  const kinds = ["multiply", "add", "subtract", "scale", "transpose", "determinant"];
+  const kinds = [
+    "multiply",
+    "add",
+    "subtract",
+    "scale",
+    "transpose",
+    "determinant",
+  ];
   const titles = {
     multiply: "Matrismultiplikation",
     add: "Matrisaddition",
@@ -17,7 +25,8 @@
     add: "Addition kräver matriser med samma storlek. Addera elementen som har samma rad och kolumn.",
     subtract:
       "Subtraktion kräver matriser med samma storlek. Subtrahera elementet i B från motsvarande element i A. Var uppmärksam på negativa tal.",
-    scale: "Multiplicera varje element i A med skalären k. Matrisens storlek förändras inte.",
+    scale:
+      "Multiplicera varje element i A med skalären k. Matrisens storlek förändras inte.",
     transpose:
       "Byt plats på rader och kolumner. Elementet på plats (i, j) i A hamnar på plats (j, i) i Aᵀ.",
     determinant:
@@ -38,7 +47,10 @@
     const level = Number($("opsDifficulty").value) || 2;
     return Array.from({ length: rows }, () =>
       Array.from({ length: cols }, () =>
-        random(level === 1 ? 0 : level === 3 ? -9 : -4, level === 1 ? 3 : level === 3 ? 9 : 4),
+        random(
+          level === 1 ? 0 : level === 3 ? -9 : -4,
+          level === 1 ? 3 : level === 3 ? 9 : 4,
+        ),
       ),
     );
   };
@@ -46,23 +58,12 @@
     hints = new Set(),
     solved = false,
     attempts = 0,
-    visibleTopic = "gauss";
+    visibleTopic = "operations";
   const helpList = $("helpOverlay").querySelector(".help-list"),
-    helpExtra = $("helpOverlay").querySelector(".help-extra"),
-    originalHelp = {
-      title: $("helpTitle").textContent,
-      list: helpList.innerHTML,
-      extra: helpExtra.textContent,
-    };
+    helpExtra = $("helpOverlay").querySelector(".help-extra");
   function setHelp() {
     if (visibleTopic === "math5") {
       window.Math5?.setHelp();
-      return;
-    }
-    if (visibleTopic === "gauss") {
-      $("helpTitle").textContent = originalHelp.title;
-      helpList.innerHTML = originalHelp.list;
-      helpExtra.textContent = originalHelp.extra;
       return;
     }
     $("helpTitle").textContent = "Beräkna resultatet";
@@ -85,7 +86,10 @@
   }
   function changed() {
     return (
-      !solved && [...$("opsAnswer").querySelectorAll("input")].some((input) => input.value.trim())
+      !solved &&
+      [...$("opsAnswer").querySelectorAll("input")].some((input) =>
+        input.value.trim(),
+      )
     );
   }
   function approve(action) {
@@ -96,7 +100,9 @@
     let kind = $("operation").value;
     if (kind === "mixed") {
       const options =
-        Number($("opsDifficulty").value) === 1 ? ["add", "scale", "transpose", "multiply"] : kinds;
+        Number($("opsDifficulty").value) === 1
+          ? ["add", "scale", "transpose", "multiply"]
+          : kinds;
       kind = options[random(0, options.length - 1)];
     }
     const size = $("opsSize").value;
@@ -159,7 +165,8 @@
     $("opsInstruction").textContent = instructions[kind];
     $("operationRule").textContent = rules[kind];
     $("operands").replaceChildren(operand(a, "A"));
-    if (["multiply", "add", "subtract"].includes(kind)) $("operands").append(operand(b, "B"));
+    if (["multiply", "add", "subtract"].includes(kind))
+      $("operands").append(operand(b, "B"));
     if (kind === "scale") {
       const span = document.createElement("p");
       span.textContent = "k = " + k;
@@ -172,7 +179,9 @@
         : scalar
           ? "Determinanten är ett tal."
           : "Resultatets storlek: " + answer.length + " × " + answer[0].length;
-    $("answerLabel").textContent = scalar ? "Din determinant" : "Din resultatmatris";
+    $("answerLabel").textContent = scalar
+      ? "Din determinant"
+      : "Din resultatmatris";
     $("answerInstruction").textContent = scalar
       ? "Skriv determinantens värde."
       : "Fyll i varje element. Heltal och bråk fungerar.";
@@ -187,7 +196,9 @@
         input.placeholder = "·";
         input.setAttribute(
           "aria-label",
-          scalar ? "Determinant" : "Svar rad " + (i + 1) + ", kolumn " + (j + 1),
+          scalar
+            ? "Determinant"
+            : "Svar rad " + (i + 1) + ", kolumn " + (j + 1),
         );
         $("opsAnswer").append(input);
       }),
@@ -220,8 +231,13 @@
       return;
     }
     const width = task.answer[0].length,
-      answerValues = task.answer.map((r, i) => r.map((_, j) => math.format(values[i * width + j])));
-    if (!force || JSON.stringify(task.work.at(-1)?.values) !== JSON.stringify(answerValues)) {
+      answerValues = task.answer.map((r, i) =>
+        r.map((_, j) => math.format(values[i * width + j])),
+      );
+    if (
+      !force ||
+      JSON.stringify(task.work.at(-1)?.values) !== JSON.stringify(answerValues)
+    ) {
       attempts++;
       task.work.push({ label: "Svar " + attempts, values: answerValues });
     }
@@ -251,7 +267,10 @@
     } else {
       $("opsFeedback").className = "feedback bad";
       $("opsFeedback").textContent =
-        correct + " av " + inputs.length + " element stämmer. Kontrollera de markerade fälten.";
+        correct +
+        " av " +
+        inputs.length +
+        " element stämmer. Kontrollera de markerade fälten.";
     }
     task.work.at(-1).note = correct + " av " + inputs.length + " element rätt";
     recordWork();
@@ -263,14 +282,17 @@
       matrices.push({ label: "B", values: task.b });
     window.GaussApi.recordWork({
       id: task.id,
-      title: titles[task.kind] + (task.kind === "scale" ? " · k = " + task.k : ""),
+      title:
+        titles[task.kind] + (task.kind === "scale" ? " · k = " + task.k : ""),
       status: solved ? "Löst" : "Pågående",
       matrices: [...matrices, ...task.work],
     });
   }
   function syncGrading() {
     const auto = window.GaussApi.autoGrade();
-    $("checkOperation").textContent = auto ? "Kontrollera svaret" : "Spara svar";
+    $("checkOperation").textContent = auto
+      ? "Kontrollera svaret"
+      : "Spara svar";
     $("opsHint").hidden = !auto;
     if (!auto) $("calculationPanel").hidden = true;
     $("gradeOps").disabled = solved;
@@ -294,9 +316,17 @@
         answer[i][j]
       );
     if (kind === "add" || kind === "subtract")
-      return p(a[i][j]) + (kind === "add" ? " + " : " − ") + p(b[i][j]) + " = " + answer[i][j];
-    if (kind === "scale") return p(k) + " × " + p(a[i][j]) + " = " + answer[i][j];
-    if (kind === "transpose") return `Aᵀ(${i + 1}, ${j + 1}) = A(${j + 1}, ${i + 1}) = ${a[j][i]}`;
+      return (
+        p(a[i][j]) +
+        (kind === "add" ? " + " : " − ") +
+        p(b[i][j]) +
+        " = " +
+        answer[i][j]
+      );
+    if (kind === "scale")
+      return p(k) + " × " + p(a[i][j]) + " = " + answer[i][j];
+    if (kind === "transpose")
+      return `Aᵀ(${i + 1}, ${j + 1}) = A(${j + 1}, ${i + 1}) = ${a[j][i]}`;
     if (a.length === 2)
       return (
         p(a[0][0]) +
@@ -316,7 +346,11 @@
             (col === 1 ? "− " : col === 2 ? "+ " : "") +
             p(v) +
             " × " +
-            p(math.det(a.slice(1).map((row) => row.filter((_, c) => c !== col)))),
+            p(
+              math.det(
+                a.slice(1).map((row) => row.filter((_, c) => c !== col)),
+              ),
+            ),
         )
         .join(" ") +
       " = " +
@@ -340,7 +374,8 @@
     $("operation").value = task.selection || task.kind;
     approve(() => {
       $("operation").value = value;
-      if (value === "determinant" && $("opsSize").value === "rect") $("opsSize").value = "2";
+      if (value === "determinant" && $("opsSize").value === "rect")
+        $("opsSize").value = "2";
       makeTask();
       task.selection = value;
     });
@@ -365,9 +400,44 @@
     setHelp();
   }
 
+  function persistHandoff() {
+    if (!task) return;
+    const inputs = [...$("opsAnswer").querySelectorAll("input")];
+    try {
+      sessionStorage.setItem(
+        "gausskamp-matrix-handoff",
+        JSON.stringify({
+          task,
+          answers: inputs.map((input) => input.value),
+          hints: [...hints],
+          solved,
+          attempts,
+        }),
+      );
+    } catch {}
+  }
+
   function enter() {
     setTopic("operations");
-    if (!task) makeTask();
+    if (!task) {
+      let saved = null;
+      try {
+        saved = JSON.parse(sessionStorage.getItem("gausskamp-matrix-handoff"));
+      } catch {}
+      if (saved?.task?.answer) {
+        task = saved.task;
+        hints = new Set(saved.hints || []);
+        solved = !!saved.solved;
+        attempts = Number(saved.attempts) || 0;
+        render();
+        [...$("opsAnswer").querySelectorAll("input")].forEach(
+          (input, index) => {
+            input.value = saved.answers?.[index] || "";
+          },
+        );
+        sessionStorage.removeItem("gausskamp-matrix-handoff");
+      } else makeTask();
+    }
   }
 
   $("opsDifficulty").onchange = () => {
@@ -393,5 +463,6 @@
     multiply,
     calculate,
     explanation,
+    persistHandoff,
   };
 })();

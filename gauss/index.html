@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="#242424" name="theme-color" />
+    <meta
+      content="Öva Gausselimination, lös ekvationssystem och hitta matriser en rad i taget i Gausskamp."
+      name="description"
+    />
+    <title>Gausselimination · Gausskamp</title>
+    <link
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23242424'/%3E%3Cpath d='M14 16v32m36-32v32M22 23h20M22 32h20M22 41h20' stroke='%23ffffff' stroke-width='4' fill='none'/%3E%3C/svg%3E"
+      rel="icon"
+      type="image/svg+xml"
+    />
+    <link href="../style.css" rel="stylesheet" />
+    <script defer="True" src="../js/shared/shared-utils.js"></script>
+    <script defer="True" src="../js/shared/gauss-core.js"></script>
+    <script defer="True" src="../js/shared/work-review.js"></script>
+    <script defer="True" src="../js/shared/practice-shell.js"></script>
+    <script defer="True" src="../js/shared/app-api.js"></script>
+    <script defer="True" src="../js/shared/learning-guide.js"></script>
+    <script defer="True" src="../js/gauss/app.js"></script>
+    <script defer="True" src="../js/shared/page-entry.js"></script>
+  </head>
+  <body data-topic="gauss">
+    <div class="app">
+      <header class="site-header">
+        <div aria-label="Gausskamp" class="brand">Gausskamp</div>
+        <nav aria-label="Övningssidor" class="page-nav">
+          <a href="../index.html">Alla ämnen</a
+          ><a aria-current="page" href="../gauss/">Gauss</a
+          ><a href="../matrix/">Matriser</a><a href="../math5/">Matematik 5</a>
+        </nav>
+        <div class="header-actions">
+          <span class="score-label">Poäng <strong id="score">0</strong></span
+          ><button
+            aria-label="Visa statistik"
+            class="icon-button"
+            id="statsButton"
+            title="Statistik"
+          >
+            Statistik</button
+          ><button
+            aria-label="Visa hjälp"
+            class="icon-button"
+            id="helpButton"
+            title="Hjälp"
+          >
+            Hjälp
+          </button>
+        </div>
+      </header>
+      <div class="work-settings">
+        <label
+          ><input checked="" id="autoGrade" type="checkbox" /> Rättning under
+          arbetet</label
+        ><button class="line-button" id="reviewWork">
+          Visa arbete / skriv ut
+        </button>
+        <p id="gradingDescription">
+          Du får återkoppling direkt efter varje svar.
+        </p>
+      </div>
+      <section aria-label="Kom igång" class="beginner-start" id="beginnerStart">
+        <div class="beginner-start-row">
+          <span>Ny här? Börja med en enkel övning.</span
+          ><button class="outline-button" id="startSimple">Börja enkelt</button
+          ><button
+            aria-controls="beginnerExample"
+            aria-expanded="false"
+            class="line-button"
+            id="showGuide"
+          >
+            Se ett exempel
+          </button>
+        </div>
+        <details class="beginner-example" id="beginnerExample">
+          <summary id="guideTitle">Gausselimination, en rad i taget</summary>
+          <p id="guideIntro"></p>
+          <ol id="guideSteps"></ol>
+          <p class="guide-before" id="guideBefore"></p>
+        </details>
+      </section>
+      <div id="gaussSurface">
+        <nav aria-label="Spelläge" class="mode-nav">
+          <button class="mode active" data-mode="practice">Fri träning</button>
+          <button class="mode" data-mode="challenge">Tidskamp</button>
+          <button class="mode" data-mode="daily">Dagens matris</button>
+          <button class="mode custom-mode" id="customButton">
+            Egen matris
+          </button>
+        </nav>
+        <div class="game-banner" id="gameBanner">
+          <div>
+            <span class="eyebrow" id="roundLabel">FRI TRÄNING · UPPGIFT 1</span>
+            <h1 id="gameTitle">Lös ekvationssystemet</h1>
+            <p id="gameDescription">
+              Gör vänster sida till identitetsmatrisen I.
+            </p>
+          </div>
+          <div class="banner-side" id="bannerSide">
+            <span id="sessionInfo">Ingen tidsgräns</span>
+          </div>
+        </div>
+        <div class="challenge-hud" hidden="" id="challengeHud">
+          <span id="roundInfo">RUNDA 1 / 3</span
+          ><span aria-label="Tre liv" id="hearts">♥ ♥ ♥</span>
+          <div class="hud-time">
+            <span id="timer">06:00</span
+            ><button
+              aria-label="Pausa klockan"
+              class="pause-button"
+              id="pauseButton"
+            >
+              Pausa
+            </button>
+          </div>
+        </div>
+        <div class="game-layout">
+          <main aria-label="Spelplan" class="board">
+            <div class="board-toolbar">
+              <div class="selectors">
+                <label
+                  >Metod<select id="method">
+                    <option value="solve">Utan invers</option>
+                    <option value="inverse">Med invers</option>
+                  </select></label
+                ><label
+                  >Nivå<select id="gaussDifficulty">
+                    <option value="1">Nybörjare</option>
+                    <option value="2">Grund</option>
+                    <option value="3">Utmaning</option>
+                  </select></label
+                ><label
+                  >Storlek<select id="size">
+                    <option value="2">2 × 2</option>
+                    <option value="3">3 × 3</option>
+                  </select></label
+                >
+              </div>
+              <div class="step-pill"><span id="stepCount">0</span> steg</div>
+            </div>
+            <div class="matrix-panel">
+              <div class="matrix-top">
+                <span>Matris</span><span id="matrixType">[ A | b ]</span>
+              </div>
+              <div class="matrix-scroller">
+                <div
+                  aria-label="Utökad matris"
+                  class="matrix"
+                  id="matrix"
+                ></div>
+              </div>
+              <div class="matrix-bottom" id="goal">
+                Mål: få [ I | x ]. Lösningen står då till höger.
+              </div>
+            </div>
+          </main>
+          <aside class="play-column">
+            <section aria-labelledby="entryHeading" class="entry-panel">
+              <h2 id="entryHeading">Nästa rad</h2>
+              <p>Fyll i hela raden, även talen till höger.</p>
+              <div class="row-select">
+                <label for="editRow">Rad</label
+                ><select id="editRow"></select>
+              </div>
+              <div class="row-comparison">
+                <span>Nuvarande rad</span>
+                <div class="current-row" id="currentRow"></div>
+                <span>Ny rad</span>
+              </div>
+              <div
+                aria-label="Nästa rad"
+                class="entry-grid"
+                id="entryGrid"
+                role="group"
+              ></div>
+              <div aria-label="Inmatningshjälp" class="input-tools">
+                <button aria-label="Skriv minus" id="minusKey" type="button">
+                  −</button
+                ><button
+                  aria-label="Skriv bråkstreck"
+                  id="fractionKey"
+                  type="button"
+                >
+                  /</button
+                ><button id="nextField" type="button">Nästa fält</button>
+              </div>
+              <button class="submit-button" id="submitButton">
+                Kontrollera raden</button
+              ><button class="line-button final-grade" id="gradeGauss">
+                Rätta hela lösningen
+              </button>
+              <div class="entry-foot">
+                Bråk: <strong>−3/2</strong>. Enter sparar eller kontrollerar
+                raden.
+              </div>
+              <div
+                aria-live="polite"
+                class="feedback"
+                id="feedback"
+                role="status"
+              >
+                Välj en rad och skriv nästa rad.
+              </div>
+              <div class="board-actions">
+                <button class="line-button" id="hintButton">Ledtråd</button
+                ><button class="line-button" id="undoButton">Ångra</button
+                ><button class="line-button" id="newButton">Ny uppgift</button>
+              </div>
+            </section>
+            <details class="history-panel">
+              <summary>
+                <span>Visa lösningssteg</span
+                ><span id="historyCount">0 steg</span>
+              </summary>
+              <p class="empty-history" id="emptyHistory">
+                Alla sparade steg visas här.
+              </p>
+              <ol id="history"></ol>
+            </details>
+          </aside>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" hidden="" id="helpOverlay">
+      <div
+        aria-labelledby="helpTitle"
+        aria-modal="true"
+        class="modal"
+        role="dialog"
+      >
+        <button aria-label="Stäng" class="modal-close" id="helpClose">×</button
+        ><span class="eyebrow">SÅ SPELAR DU</span>
+        <h2 id="helpTitle">En rad i taget.</h2>
+        <div class="help-list">
+          <div>
+            <b>01</b>
+            <p>Gör vänster sida av matrisen till identitetsmatrisen I.</p>
+          </div>
+          <div>
+            <b>02</b>
+            <p>
+              Välj en rad och skriv resultatet av
+              <strong>en</strong> radoperation. Du får multiplicera raden, lägga
+              till en multipel av en annan rad eller byta två rader.
+            </p>
+          </div>
+          <div>
+            <b>03</b>
+            <p>
+              Fyll i hela raden. Skriv heltal eller bråk som
+              <strong>−3/2</strong>. Spelet kontrollerar ditt steg, inte vilken
+              metod du valde.
+            </p>
+          </div>
+        </div>
+        <p class="help-extra">
+          På dator: Tab flyttar mellan fält, Enter kontrollerar. På telefon:
+          tryck på en rad i matrisen för att välja den. Ledtrådar ges i tre
+          nivåer.
+        </p>
+        <button class="submit-button" id="helpDone">
+          Tillbaka till spelet
+        </button>
+      </div>
+    </div>
+    <div class="overlay" hidden="" id="statsOverlay">
+      <div
+        aria-labelledby="statsTitle"
+        aria-modal="true"
+        class="modal"
+        role="dialog"
+      >
+        <button aria-label="Stäng" class="modal-close" id="statsClose">×</button
+        ><span class="eyebrow">DIN STATISTIK</span>
+        <h2 id="statsTitle">Så går det.</h2>
+        <div class="stats-grid">
+          <div>
+            <strong id="statSolved">0</strong><span>Lösta uppgifter</span>
+          </div>
+          <div><strong id="statBest">0</strong><span>Bästa svit</span></div>
+          <div>
+            <strong id="statChallenge">—</strong><span>Bästa tidskamp</span>
+          </div>
+          <div><strong id="statDaily">—</strong><span>Dagens bästa</span></div>
+        </div>
+        <p class="help-extra">Resultaten sparas på den här enheten.</p>
+        <button class="submit-button" id="statsDone">Fortsätt spela</button>
+      </div>
+    </div>
+    <div class="overlay" hidden="" id="confirmOverlay">
+      <div
+        aria-labelledby="confirmTitle"
+        aria-modal="true"
+        class="modal compact"
+        role="dialog"
+      >
+        <h2 id="confirmTitle">Byta uppgift?</h2>
+        <p>Din påbörjade lösning och inmatning ersätts.</p>
+        <div class="confirm-actions">
+          <button class="line-button" id="cancelReplace">
+            Fortsätt med uppgiften</button
+          ><button class="submit-button" id="confirmReplace">
+            Byt uppgift
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay" hidden="" id="reviewOverlay">
+      <section
+        aria-labelledby="reviewTitle"
+        aria-modal="true"
+        class="modal work-modal"
+        role="dialog"
+      >
+        <div class="review-toolbar">
+          <h2 id="reviewTitle">Ditt arbete</h2>
+          <button class="line-button" id="printWork">
+            Skriv ut / spara PDF</button
+          ><button class="line-button" id="closeReview">Stäng</button>
+        </div>
+        <p class="review-intro">
+          Alla sparade steg, samlade per uppgift. De senaste 30 uppgifterna
+          sparas på den här enheten.
+        </p>
+        <div id="workReports"></div>
+      </section>
+    </div>
+    <div class="overlay" hidden="" id="pauseOverlay">
+      <div
+        aria-labelledby="pauseTitle"
+        aria-modal="true"
+        class="modal compact"
+        role="dialog"
+      >
+        <span class="eyebrow">TIDSKAMP</span>
+        <h2 id="pauseTitle">Pausat.</h2>
+        <p>Klockan står still tills du fortsätter.</p>
+        <button class="submit-button" id="resumeButton">Fortsätt spela</button>
+      </div>
+    </div>
+    <div class="overlay" hidden="" id="resultOverlay">
+      <div
+        aria-labelledby="resultTitle"
+        aria-modal="true"
+        class="modal result-modal"
+        role="dialog"
+      >
+        <button aria-label="Stäng" class="modal-close" id="resultClose">
+          ×</button
+        ><span class="eyebrow" id="resultEyebrow">UPPGIFT KLAR</span>
+        <h2 id="resultTitle">Bra räknat.</h2>
+        <p id="resultText"></p>
+        <div class="result-solution" id="resultSolution"></div>
+        <button class="line-button" id="resultReview">
+          Visa hela arbetet / skriv ut</button
+        ><button class="submit-button" id="resultNext">Nästa uppgift</button>
+      </div>
+    </div>
+    <div class="overlay" hidden="" id="customOverlay">
+      <div
+        aria-labelledby="customTitle"
+        aria-modal="true"
+        class="modal custom-modal"
+        role="dialog"
+      >
+        <button aria-label="Stäng" class="modal-close" id="customClose">
+          ×</button
+        ><span class="eyebrow">EGEN UPPGIFT</span>
+        <h2 id="customTitle">Din matris.</h2>
+        <p>
+          Mata in koefficienterna. Vid ekvationssystem anger du också
+          högerledet. Matrisen måste vara inverterbar.
+        </p>
+        <div class="custom-options">
+          <label
+            >Metod<select id="customMethod">
+              <option value="solve">Lös system</option>
+              <option value="inverse">Hitta invers</option>
+            </select></label
+          ><label
+            >Storlek<select id="customSize">
+              <option value="2">2 × 2</option>
+              <option value="3">3 × 3</option>
+            </select></label
+          >
+        </div>
+        <div class="custom-grid" id="customGrid"></div>
+        <div class="form-error" id="customError" role="alert"></div>
+        <button class="submit-button" id="startCustom">
+          Spela den här uppgiften
+        </button>
+      </div>
+    </div>
+  </body>
+</html>
