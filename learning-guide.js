@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const $ = (id) => document.getElementById(id);
+  const { $ } = window.GaussShared;
   const guides = {
     gauss: {
       title: "Gausselimination, en rad i taget",
@@ -153,10 +153,10 @@
     else if (topic === "operations") window.MatrixOps?.startBeginner();
     else window.GaussGame?.startBeginner();
   };
-  $("topic").addEventListener("change", () => {
-    if ($("topic").value !== "math5") setArea($("topic").value);
+  function onTopicChange(topic) {
+    if (topic !== "math5") setArea(topic);
     $("beginnerStart").hidden = false;
-  });
-  window.BeginnerGuide = { setArea, guides };
+  }
+  window.BeginnerGuide = { setArea, onTopicChange, guides };
   setArea("gauss");
 })();

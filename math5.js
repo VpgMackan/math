@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const $ = (id) => document.getElementById(id),
+  const { $, storage } = window.GaussShared,
     E = window.Math5Engine,
     C = E.categories,
     key = "gausskamp-math5-v1";
@@ -16,7 +16,7 @@
     retry: [],
   };
   try {
-    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    const saved = storage.readJson(key, null);
     if (saved && C[saved.category]) state = { ...state, ...saved, version: saved.version || 1 };
     if (state.task && !C[state.task.category]?.types[state.task.type]) state.task = null;
   } catch {}
@@ -36,15 +36,13 @@
   ensureKind();
   persist();
   function persist() {
-    try {
-      localStorage.setItem(key, JSON.stringify(state));
-    } catch {}
+    storage.writeJson(key, state);
   }
   function fresh(category = state.category, kind = state.kind) {
     const task = E.generate(category, kind, state.level);
     return {
       ...task,
-      id: window.WorkReview.id(),
+      id: window.GaussApi.workId(),
       draft: task.fields.map(() => ""),
       notes: "",
       submissions: [],
@@ -109,7 +107,7 @@
         label: "Bevis",
         text: "Automatisk rättning gäller kontrollpunkterna. Det skrivna resonemanget bedöms av användaren.",
       });
-    window.WorkReview.record({
+    window.GaussApi.recordWork({
       id: task.id,
       title: "Matematik 5 · " + C[task.category].title + " · " + task.title,
       status: task.solved
@@ -143,7 +141,7 @@
   function changeCategory(id) {
     if (testing()) return;
     capture();
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       saveReport();
       state.category = id;
       state.kind = "mixed";
@@ -260,13 +258,13 @@
       task = state.task;
     $("m5Submit").textContent = test
       ? "Spara och fortsätt"
-      : window.WorkReview.auto
+      : window.GaussApi.autoGrade()
         ? "Kontrollera svaret"
         : "Spara svar";
     $("m5Submit").disabled = !!task?.solved || complete;
-    $("m5Grade").hidden = test || window.WorkReview.auto;
+    $("m5Grade").hidden = test || window.GaussApi.autoGrade();
     $("m5Grade").disabled = !!task?.solved;
-    $("m5Hint").hidden = test || !window.WorkReview.auto;
+    $("m5Hint").hidden = test || !window.GaussApi.autoGrade();
     $("m5Reference").hidden = test;
     $("beginnerStart").hidden = test || !!state.test?.graded;
     $("m5AreaChooser").hidden = test;
@@ -286,7 +284,7 @@
     $("m5Workspace").hidden = complete || !!state.test?.graded;
     $("m5TestSummary").hidden = !complete && !state.test?.graded;
     $("m5Solution").hidden = !task?.solutionSeen || test || !!state.test?.graded;
-    $("m5HintText").hidden = !task?.hinted || test || !window.WorkReview.auto;
+    $("m5HintText").hidden = !task?.hinted || test || !window.GaussApi.autoGrade();
   }
   function render() {
     ensureKind();
@@ -415,7 +413,7 @@
     p.solved++;
     p.byLevel ??= {};
     p.byLevel[task.level] = (p.byLevel[task.level] || 0) + 1;
-    window.GaussGame.addPoints(
+    window.GaussApi.addPoints(
       Math.max(
         10,
         30 + task.level * 10 - (task.submissions.length - 1) * 5 - (task.hinted ? 7 : 0),
@@ -450,7 +448,7 @@
       render();
       return;
     }
-    if (window.WorkReview.auto || force) gradeTask(task);
+    if (window.GaussApi.autoGrade() || force) gradeTask(task);
     else {
       task.grade = null;
       saveReport(task);
@@ -460,7 +458,7 @@
   }
   function next() {
     capture();
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       saveReport();
       state.test = null;
       if (state.retry.length) {
@@ -476,7 +474,7 @@
   }
   function beginTest() {
     capture();
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       saveReport();
       const ids = Object.keys(C).filter((x) => x !== "graphs"),
         order = [...ids];
@@ -605,7 +603,7 @@
   $("m5Next").onclick = next;
   $("m5StartTest").onclick = beginTest;
   $("m5FinishTest").onclick = finishTest;
-  $("m5PrintTest").onclick = () => window.WorkReview.show();
+  $("m5PrintTest").onclick = () => window.GaussApi.showWorkReview();
   $("m5BackPractice").onclick = backPractice;
   $("m5Retry").onclick = () => {
     state.retry = state.test.tasks
@@ -621,7 +619,7 @@
     render();
   };
   $("m5EndTest").onclick = () =>
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       state.test.tasks.forEach(saveReport);
       backPractice();
     }, true);
@@ -629,7 +627,7 @@
     const value = $("m5Kind").value;
     $("m5Kind").value = state.kind;
     capture();
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       saveReport();
       state.kind = value;
       state.test = null;
@@ -644,7 +642,7 @@
     const value = Number($("m5Level").value);
     $("m5Level").value = String(state.level);
     capture();
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       saveReport();
       state.level = value;
       ensureKind();
@@ -661,7 +659,7 @@
     persist();
   };
   $("m5Hint").onclick = () => {
-    if (testing() || !window.WorkReview.auto) return;
+    if (testing() || !window.GaussApi.autoGrade()) return;
     state.task.hinted = true;
     $("m5HintText").textContent = state.task.hint;
     $("m5HintText").hidden = false;
@@ -694,7 +692,7 @@
   });
   function startBeginner() {
     capture();
-    window.GaussGame.requestReplace(() => {
+    window.GaussApi.requestReplace(() => {
       saveReport();
       state.test = null;
       state.retry = [];
