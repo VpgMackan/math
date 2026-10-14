@@ -1,13 +1,13 @@
 (() => {
   "use strict";
-  const $ = (id) => document.getElementById(id);
+  const { $, storage } = window.GaussShared;
   let reports = [],
     auto = true,
     returnFocus = null,
     shouldResume = false;
   try {
-    auto = localStorage.getItem("gausskamp-auto-grade") !== "false";
-    const saved = JSON.parse(localStorage.getItem("gausskamp-work") || "[]");
+    auto = storage.readString("gausskamp-auto-grade", "true") !== "false";
+    const saved = storage.readJson("gausskamp-work", []);
     if (Array.isArray(saved)) reports = saved.slice(-30);
   } catch {}
   const api = {
@@ -20,9 +20,7 @@
       if (i < 0) reports.push(report);
       else reports[i] = report;
       reports = reports.slice(-30);
-      try {
-        localStorage.setItem("gausskamp-work", JSON.stringify(reports));
-      } catch {}
+      storage.writeJson("gausskamp-work", reports);
     },
     show,
   };
@@ -35,9 +33,7 @@
   }
   $("autoGrade").onchange = () => {
     auto = $("autoGrade").checked;
-    try {
-      localStorage.setItem("gausskamp-auto-grade", String(auto));
-    } catch {}
+    storage.writeString("gausskamp-auto-grade", String(auto));
     setting();
     window.dispatchEvent(new Event("gradingchange"));
   };

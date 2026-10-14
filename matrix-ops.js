@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const $ = (id) => document.getElementById(id),
+  const { $ } = window.GaussShared,
     math = window.GaussMath;
   const kinds = ["multiply", "add", "subtract", "scale", "transpose", "determinant"];
   const titles = {
@@ -31,19 +31,8 @@
     transpose: "Byt plats på raderna och kolumnerna i A.",
     determinant: "Beräkna det(A). Svaret är ett tal.",
   };
-  function multiply(a, b) {
-    if (a[0].length !== b.length) throw Error("Incompatible dimensions");
-    return a.map((row) => b[0].map((_, j) => row.reduce((sum, x, k) => sum + x * b[k][j], 0)));
-  }
-  function calculate(kind, a, b, k) {
-    if (kind === "multiply") return multiply(a, b);
-    if (kind === "add") return a.map((r, i) => r.map((v, j) => v + b[i][j]));
-    if (kind === "subtract") return a.map((r, i) => r.map((v, j) => v - b[i][j]));
-    if (kind === "scale") return a.map((r) => r.map((v) => k * v));
-    if (kind === "transpose") return a[0].map((_, j) => a.map((r) => r[j]));
-    if (kind === "determinant") return [[math.det(a)]];
-    throw Error("Unknown operation");
-  }
+  const core = window.MatrixOpsCore.createMatrixOpsCore(math.det);
+  const { multiply, calculate } = core;
   const random = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const matrix = (rows, cols) => {
     const level = Number($("opsDifficulty").value) || 2;
@@ -100,7 +89,7 @@
     );
   }
   function approve(action) {
-    window.GaussGame.requestReplace(action, changed());
+    window.GaussApi.requestReplace(action, changed());
   }
   function makeTask() {
     recordWork();
@@ -128,7 +117,7 @@
         Number($("opsDifficulty").value) === 3 ? 9 : 4,
       );
     task = {
-      id: window.WorkReview.id(),
+      id: window.GaussApi.workId(),
       work: [],
       kind,
       a,
@@ -236,7 +225,7 @@
       attempts++;
       task.work.push({ label: "Svar " + attempts, values: answerValues });
     }
-    if (!window.WorkReview.auto && !force) {
+    if (!window.GaussApi.autoGrade() && !force) {
       task.work.at(-1).note = "";
       $("opsFeedback").className = "feedback";
       $("opsFeedback").textContent = "Svar sparat. Rätta när du är klar.";
@@ -253,7 +242,7 @@
     if (correct === inputs.length) {
       solved = true;
       const earned = Math.max(10, 60 - (attempts - 1) * 5 - hints.size * 7);
-      window.GaussGame.addPoints(earned);
+      window.GaussApi.addPoints(earned);
       $("opsFeedback").className = "feedback good";
       $("opsFeedback").textContent =
         "Rätt! +" + earned + " poäng. Välj Ny uppgift för att fortsätta.";
@@ -272,7 +261,7 @@
     const matrices = [{ label: "A", values: task.a }];
     if (["multiply", "add", "subtract"].includes(task.kind))
       matrices.push({ label: "B", values: task.b });
-    window.WorkReview.record({
+    window.GaussApi.recordWork({
       id: task.id,
       title: titles[task.kind] + (task.kind === "scale" ? " · k = " + task.k : ""),
       status: solved ? "Löst" : "Pågående",
@@ -280,7 +269,7 @@
     });
   }
   function syncGrading() {
-    const auto = window.WorkReview.auto;
+    const auto = window.GaussApi.autoGrade();
     $("checkOperation").textContent = auto ? "Kontrollera svaret" : "Spara svar";
     $("opsHint").hidden = !auto;
     if (!auto) $("calculationPanel").hidden = true;
@@ -371,33 +360,16 @@
       check();
     }
   });
-  $("topic").onchange = () => {
-    const next = $("topic").value;
-    $("topic").value = visibleTopic;
-    const action = () => {
-      visibleTopic = next;
-      $("topic").value = next;
-      $("gaussSurface").hidden = next !== "gauss";
-      $("operationsSurface").hidden = next !== "operations";
-      $("math5Surface").hidden = next !== "math5";
-      setHelp();
-      if (next !== "math5") {
-        window.BeginnerGuide?.setArea(next);
-        $("beginnerStart").hidden = false;
-      }
-      if (next === "math5") {
-        window.GaussGame.pause();
-        window.Math5?.enter();
-      } else if (next === "operations") {
-        window.GaussGame.pause();
-        if (!task) makeTask();
-      } else {
-        window.GaussGame.resume();
-        window.GaussGame.refresh();
-      }
-    };
-    action();
-  };
+  function setTopic(topic) {
+    visibleTopic = topic;
+    setHelp();
+  }
+
+  function enter() {
+    setTopic("operations");
+    if (!task) makeTask();
+  }
+
   $("opsDifficulty").onchange = () => {
     const value = $("opsDifficulty").value;
     $("opsDifficulty").value = String(task?.difficulty || 2);
@@ -415,6 +387,9 @@
         makeTask();
         $("beginnerExample").open = true;
       }),
+    enter,
+    setTopic,
+    setHelp,
     multiply,
     calculate,
     explanation,

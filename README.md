@@ -1,36 +1,57 @@
 # Gausskamp — editable static site
 
-This repository contains a browser-based mathematics practice app built with plain HTML, CSS, and JavaScript. **There is no framework, bundler, build step, or server-side code:** the editable site is already in `dist/`.
+This repository is a browser-based mathematics practice app built with plain HTML, CSS, and JavaScript.
+There is no framework, bundler, build step, or server-side code.
 
 ## Run locally
 
-From the repository root, start a static web server:
+From the repository root:
 
 ```sh
-python3 -m http.server 8000 --directory dist
+python3 -m http.server 8000 --directory /home/runner/work/math/math
 ```
 
-Then open <http://localhost:8000>. You can also host the contents of `dist/` directly; `.openai/hosting.json` is already configured to use that directory.
+Open <http://localhost:8000/index.html>.
 
-## Where to make changes
+## Project layout
 
-- `dist/index.html` — page structure, labels, controls, and app sections.
-- `dist/style.css` — colors, spacing, layout, responsive rules, and print styles.
-- `dist/app.js` — Gauss elimination, inverse, game modes, and general app behavior.
-- `dist/matrix-ops.js` — matrix-operation exercises and answers.
-- `dist/math5.js` — Matematik 5 interface, progress, and test flow.
-- `dist/math5-engine.js` — Matematik 5 exercise generation and answer checking.
-- `dist/learning-guide.js` — beginner examples and guidance.
-- `dist/work-review.js` — saved work, grading preferences, and print/review UI.
+- `/home/runner/work/math/math/index.html` — app structure, overlays, and script loading order.
+- `/home/runner/work/math/math/style.css` — layout, theme, responsive and print styles.
+- `/home/runner/work/math/math/shared-utils.js` — shared DOM and storage helpers plus seeded/random/date helpers.
+- `/home/runner/work/math/math/gauss-core.js` — Gauss math primitives and puzzle generation helpers.
+- `/home/runner/work/math/math/app.js` — Gauss gameplay state, persistence, rendering, and interactions.
+- `/home/runner/work/math/math/app-api.js` — small shared API used by feature modules.
+- `/home/runner/work/math/math/app-shell.js` — centralized topic/surface switching lifecycle.
+- `/home/runner/work/math/math/matrix-ops.js` — matrix operation practice mode.
+- `/home/runner/work/math/math/math5-engine-generators.js` — Matematik 5 task generation rules by category/level.
+- `/home/runner/work/math/math/math5-engine.js` — Matematik 5 engine metadata, generation orchestration, parsing, and validation.
+- `/home/runner/work/math/math/math5.js` — Matematik 5 UI flow, progress, grading, and test mode.
+- `/home/runner/work/math/math/learning-guide.js` — beginner guidance content and quick-start entry.
+- `/home/runner/work/math/math/work-review.js` — saved work, grading preference, and print/review overlay.
 
-The JavaScript files are separated by feature and formatted for easier reading. `index.html` loads them with `defer`; preserve their current order because later files use globals created by earlier ones.
+## Architecture and dependencies
+
+The app is loaded with `defer` scripts and relies on intentional global exports:
+
+1. `shared-utils.js` provides `window.GaussShared`.
+2. `work-review.js` provides `window.WorkReview`.
+3. `gauss-core.js` provides `window.GaussCore` and `window.GaussMath`.
+4. `app-api.js` provides `window.GaussApi` (thin shared boundary over game/work systems).
+5. `app.js` provides `window.GaussGame`.
+6. `matrix-ops.js` provides `window.MatrixOps` and uses `GaussMath` + `GaussApi`.
+7. `math5-engine-generators.js` provides `window.Math5EngineGenerators`.
+8. `math5-engine.js` provides `window.Math5Engine`.
+9. `math5.js` provides `window.Math5` and uses `Math5Engine` + `GaussApi`.
+10. `app-shell.js` centralizes topic switching across Gauss, Matrix Ops, and Matematik 5.
+
+Keep this order unless you also update the dependent globals.
 
 ## Verify changes
 
-After editing, run the app in a browser and run the smoke tests from the repository root:
+Run the lightweight regression checks from the repository root:
 
 ```sh
-node checks/math5-smoke.cjs
+node /home/runner/work/math/math/checks/regression.cjs
 ```
 
-The app stores scores, settings, and saved work in the browser's `localStorage`. There are no source maps or separate pre-build source files in this checkout, so the formatted files in `dist/` are the practical editable source; their exact match to any original authoring files cannot be confirmed.
+Then open the app locally and smoke-test all three topics.

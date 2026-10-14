@@ -1,124 +1,23 @@
 (() => {
   "use strict";
-  const $ = (id) => document.getElementById(id);
+  const { $, seeded, dateKey, hash, storage } = window.GaussShared;
+  const {
+    frac,
+    plus,
+    times,
+    negative,
+    isZero,
+    isOne,
+    equals,
+    format,
+    clone,
+    sameRow,
+    parse,
+    ratio,
+    makePuzzle,
+    invertible,
+  } = window.GaussCore;
   const storeKey = "gausskamp-v4";
-  const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a) || 1);
-  function frac(a, b = 1) {
-    if (!Number.isSafeInteger(a) || !Number.isSafeInteger(b) || b === 0)
-      throw Error("Ogiltigt eller för stort tal.");
-    if (b < 0) {
-      a = -a;
-      b = -b;
-    }
-    const d = gcd(a, b);
-    return [a / d, b / d];
-  }
-  const plus = (a, b) => frac(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
-  const times = (a, b) => frac(a[0] * b[0], a[1] * b[1]);
-  const negative = (a) => frac(-a[0], a[1]);
-  const isZero = (a) => a[0] === 0;
-  const isOne = (a) => a[0] === a[1];
-  const equals = (a, b) => a[0] === b[0] && a[1] === b[1];
-  const format = (a) => (a[1] === 1 ? String(a[0]) : a[0] + "/" + a[1]);
-  const clone = (m) => m.map((row) => row.map((x) => [...x]));
-  const sameRow = (a, b) => a.every((x, i) => equals(x, b[i]));
-  function parse(value) {
-    const s = String(value).trim().replaceAll("−", "-");
-    if (!/^[+-]?\d+(\/[+-]?\d+)?$/.test(s))
-      throw Error("Fyll i varje fält med ett heltal eller bråk, till exempel −3/2.");
-    const [a, b = "1"] = s.split("/");
-    return frac(Number(a), Number(b));
-  }
-  function ratio(a, b) {
-    for (let i = 0; i < b.length; i++)
-      if (!isZero(b[i])) return frac(a[i][0] * b[i][1], a[i][1] * b[i][0]);
-    return null;
-  }
-  function det(a) {
-    if (a.length === 2) return a[0][0] * a[1][1] - a[0][1] * a[1][0];
-    return a[0].reduce(
-      (total, x, j) =>
-        total + (j % 2 ? -1 : 1) * x * det(a.slice(1).map((r) => r.filter((_, k) => k !== j))),
-      0,
-    );
-  }
-  const randomInt = (min, max, rng = Math.random) => min + Math.floor(rng() * (max - min + 1));
-  function seeded(seed) {
-    let t = seed >>> 0;
-    return () => {
-      t += 0x6d2b79f5;
-      let v = t;
-      v = Math.imul(v ^ (v >>> 15), v | 1);
-      v ^= v + Math.imul(v ^ (v >>> 7), v | 61);
-      return ((v ^ (v >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  function dateKey() {
-    return new Intl.DateTimeFormat("sv-SE", {
-      timeZone: "Europe/Stockholm",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-  }
-  function hash(s) {
-    let h = 2166136261;
-    for (const c of s) {
-      h ^= c.charCodeAt(0);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
-  function makePuzzle(size, kind, rng = Math.random, difficulty = 2) {
-    let a,
-      attempts = 0;
-    const limit = difficulty === 3 ? 6 : 3;
-    do {
-      a = Array.from({ length: size }, () =>
-        Array.from({ length: size }, () => randomInt(-limit, limit, rng)),
-      );
-      attempts++;
-    } while (
-      (!det(a) ||
-        Math.abs(det(a)) > (difficulty === 3 ? 120 : 24) ||
-        a.every((row, i) => row.every((v, j) => v === (i === j ? 1 : 0)))) &&
-      attempts < 5000
-    );
-    if (!det(a))
-      a = Array.from({ length: size }, (_, i) =>
-        Array.from({ length: size }, (_, j) => (i === j ? 2 : 1)),
-      );
-    if (difficulty === 1) {
-      a = Array.from({ length: size }, (_, i) =>
-        Array.from({ length: size }, (_, j) => (i === j ? 1 : j > i ? randomInt(0, 2, rng) : 0)),
-      );
-      a[0][1] = 1;
-    }
-    const x = Array.from({ length: size }, () =>
-      randomInt(difficulty === 1 ? 1 : -limit, limit, rng),
-    );
-    const right =
-      kind === "solve"
-        ? a.map((row) => [row.reduce((sum, v, j) => sum + v * x[j], 0)])
-        : a.map((_, i) => Array.from({ length: size }, (_, j) => +(i === j)));
-    return a.map((row, i) => [...row, ...right[i]].map((v) => frac(v)));
-  }
-  function invertible(a) {
-    const m = clone(a),
-      n = m.length;
-    for (let c = 0; c < n; c++) {
-      let r = c;
-      while (r < n && isZero(m[r][c])) r++;
-      if (r === n) return false;
-      [m[c], m[r]] = [m[r], m[c]];
-      for (let i = c + 1; i < n; i++) {
-        if (isZero(m[i][c])) continue;
-        const k = times(m[i][c], frac(m[c][c][1], m[c][c][0]));
-        m[i] = m[i].map((x, j) => plus(x, negative(times(k, m[c][j]))));
-      }
-    }
-    return true;
-  }
   const initialStats = { score: 0, solved: 0, bestStreak: 0, streak: 0, fastest: null, daily: {} };
   let stats = { ...initialStats },
     game = {
@@ -146,7 +45,7 @@
       selectedRow: 0,
     };
   try {
-    const saved = JSON.parse(localStorage.getItem(storeKey) || "null");
+    const saved = storage.readJson(storeKey, null);
     if (saved?.stats) {
       stats = { ...initialStats, ...saved.stats, daily: saved.stats.daily || {} };
       if (
@@ -157,8 +56,8 @@
         game = { ...game, ...saved.game, deadline: null, paused: false, over: false };
       }
     } else {
-      stats.score = Number(localStorage.getItem("gauss_score")) || 0;
-      stats.bestStreak = Number(localStorage.getItem("gauss_best")) || 0;
+      stats.score = Number(storage.readString("gauss_score", "0")) || 0;
+      stats.bestStreak = Number(storage.readString("gauss_best", "0")) || 0;
     }
   } catch {}
   let timerId = null,
@@ -168,12 +67,10 @@
     lastInputIndex = 0,
     pendingReplace = null;
   function save() {
-    try {
-      const safe = ["practice", "daily", "custom"].includes(game.mode)
-        ? { ...game, deadline: null, paused: false }
-        : null;
-      localStorage.setItem(storeKey, JSON.stringify({ stats, game: safe }));
-    } catch {}
+    const safe = ["practice", "daily", "custom"].includes(game.mode)
+      ? { ...game, deadline: null, paused: false }
+      : null;
+    storage.writeJson(storeKey, { stats, game: safe });
   }
   function feedback(text, type = "") {
     const node = $("feedback");
@@ -353,7 +250,7 @@
   }
   function resetBoard(matrix) {
     recordWork();
-    game.workId = window.WorkReview.id();
+    game.workId = window.GaussApi.workId();
     game.review = null;
     game.matrix = clone(matrix);
     game.initial = clone(matrix);
@@ -619,9 +516,9 @@
   }
   function recordWork() {
     if (!game.initial.length) return;
-    game.workId ??= window.WorkReview.id();
+    game.workId ??= window.GaussApi.workId();
     const fm = (m) => m.map((r) => r.map(format));
-    window.WorkReview.record({
+    window.GaussApi.recordWork({
       id: game.workId,
       title:
         game.method === "solve"
@@ -643,7 +540,7 @@
     });
   }
   function syncGrading() {
-    const auto = window.WorkReview.auto;
+    const auto = window.GaussApi.autoGrade();
     $("submitButton").textContent = auto ? "Kontrollera raden" : "Spara raden";
     $("gradeGauss").disabled = !active() || !game.steps.length;
     $("hintButton").hidden = !auto;
@@ -707,7 +604,7 @@
       return;
     }
     const row = Number($("editRow").value);
-    if (!window.WorkReview.auto) {
+    if (!window.GaussApi.autoGrade()) {
       const before = clone(game.matrix);
       let swap = -1;
       for (let i = 0; i < game.size; i++)
@@ -1170,7 +1067,6 @@
       },
     );
   }
-  window.GaussMath = { frac, plus, times, parse, equals, format, det };
   $("gaussDifficulty").onchange = () => {
     const value = $("gaussDifficulty").value;
     $("gaussDifficulty").value = String(game.difficulty || 1);
