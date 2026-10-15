@@ -27,7 +27,7 @@
     combinatorics: {
       title: "Kombinatorik",
       desc: "Ordning, urval och antal",
-      rule: "Produktprincipen: multiplicera antalet val i varje steg. Ordning utan återläggning: n!/(n−k)!. Urval utan ordning: C(n,k) = n!/[k!(n−k)!]. Med upprepade identiska objekt: n!/(a!b!…).",
+      rule: "Produktprincipen: multiplicera antalet val i varje steg. Ordning utan återläggning: n!/(n−k)!. Urval utan ordning: C(n,k) = n!/[k!(n−k)!]. Med upprepade identiska objekt: n!/(a!b!…). Stjärnor och streck: n identiska objekt på k personer ger C(n+k−1, k−1). Komplementmetoden: räkna alla och subtrahera de som inte uppfyller villkoret.",
       types: {
         product: "Produktprincipen",
         permutation: "Permutationer",
@@ -35,12 +35,15 @@
         repeated: "Identiska objekt",
         binomial: "Binomialsatsen",
         restricted: "Urval med villkor",
+        arrangement: "Uppställningar med villkor",
+        distribution: "Fördela identiska objekt",
+        errorhunt: "Hitta felet i uträkningen",
       },
     },
     sets: {
       title: "Mängdlära",
       desc: "Union, snitt och komplement",
-      rule: "A ∪ B: finns i minst en mängd. A ∩ B: finns i båda. A ∖ B: finns i A men inte B. Aᶜ = U ∖ A. |A ∪ B| = |A| + |B| − |A ∩ B|. En mängd med n element har 2ⁿ delmängder.",
+      rule: "A ∪ B: finns i minst en mängd. A ∩ B: finns i båda. A ∖ B: finns i A men inte B. Aᶜ = U ∖ A. |A ∪ B| = |A| + |B| − |A ∩ B|. För tre mängder: |A ∪ B ∪ C| = |A|+|B|+|C| − |A∩B| − |A∩C| − |B∩C| + |A∩B∩C|. En mängd med n element har 2ⁿ delmängder.",
       types: {
         union: "Union",
         intersection: "Snitt",
@@ -49,56 +52,73 @@
         demorgan: "De Morgans lag",
         cardinality: "Antal element",
         subsets: "Delmängder",
+        venn: "Venndiagram och antal",
+        laws: "Mängdlagar: sant eller falskt",
       },
     },
     congruence: {
       title: "Kongruens",
       desc: "Rester och modulär räkning",
-      rule: "a ≡ b (mod m) betyder att m delar a−b. Rester kan reduceras efter addition och multiplikation. En invers till a modulo m finns om största gemensamma delaren av a och m är 1.",
+      rule: "a ≡ b (mod m) betyder att m delar a−b. Rester kan reduceras efter addition och multiplikation. En invers till a modulo m finns om största gemensamma delaren av a och m är 1. Sista siffran i en potens är resten modulo 10, och potenserna upprepar sig periodiskt.",
       types: {
         remainder: "Rester",
         power: "Potenser modulo m",
         equation: "Kongruensekvationer",
         inverse: "Multiplikativ invers",
+        weekday: "Veckodagar och cykler",
+        lastdigit: "Sista siffran i en potens",
+        checkdigit: "Kontrollsiffror (personnummer)",
       },
     },
     bases: {
       title: "Talbaser",
       desc: "Positionssystem och omvandling",
-      rule: "I bas b är platsvärdena 1, b, b², b³, … från höger. Till bas tio: summera siffra × platsvärde. Från bas tio: dividera upprepade gånger med b och läs resterna baklänges. I bas 16 står A–F för 10–15.",
+      rule: "I bas b är platsvärdena 1, b, b², b³, … från höger. Till bas tio: summera siffra × platsvärde. Från bas tio: dividera upprepade gånger med b och läs resterna baklänges. I bas 16 står A–F för 10–15. Med k siffror i bas b ryms talen 0 till b^k − 1.",
       types: {
         toDecimal: "Till bas tio",
         fromDecimal: "Från bas tio",
         between: "Mellan talbaser",
+        minbase: "Vilken bas är det?",
+        hexcolor: "Färgkoder och bitar",
+        bits: "Antal siffror och bitar",
       },
     },
     sequences: {
       title: "Talföljder och rekursion",
       desc: "Nästa term och generella samband",
-      rule: "Aritmetisk: aₙ = a₁+(n−1)d. Geometrisk: aₙ = a₁qⁿ⁻¹. En rekursion beskriver nästa term med tidigare termer; använd startvärdet och upprepa regeln. Geometrisk summa: a₁(qⁿ−1)/(q−1) för q ≠ 1.",
+      rule: "Aritmetisk: aₙ = a₁+(n−1)d. Geometrisk: aₙ = a₁qⁿ⁻¹. En rekursion beskriver nästa term med tidigare termer; använd startvärdet och upprepa regeln. Geometrisk summa: a₁(qⁿ−1)/(q−1) för q ≠ 1. Oändlig serie med |q| < 1: a₁/(1−q). Om andra differenserna är konstanta är aₙ ett andragradspolynom.",
       types: {
         arithmetic: "Aritmetiska talföljder",
         geometric: "Geometriska talföljder",
         recurrence: "Linjära rekursioner",
         second: "Två tidigare termer",
         sum: "Geometriska summor",
+        identify: "Vilken sorts talföljd?",
+        fromTerms: "Bestäm följden ur två termer",
+        quadratic: "Differensföljder",
+        annuity: "Sparande och lån",
+        infinite: "Oändliga geometriska serier",
       },
     },
     proofs: {
       title: "Induktion och bevis",
       desc: "Basfall, antagande och induktionssteg",
-      rule: "Induktion: 1. Visa basfallet. 2. Anta påståendet för n=k. 3. Visa det för n=k+1 med hjälp av antagandet. 4. Dra slutsatsen. Ett motsägelsebevis antar att påståendet är falskt och härleder en motsägelse.",
+      rule: "Induktion: 1. Visa basfallet. 2. Anta påståendet för n=k. 3. Visa det för n=k+1 med hjälp av antagandet. 4. Dra slutsatsen. Ett motsägelsebevis antar att påståendet är falskt och härleder en motsägelse. Ett enda motexempel motbevisar ett allmänt påstående. Vid induktion behövs både ett fungerande basfall och ett steg som gäller för alla k.",
       types: {
         sum: "Summan av heltal",
         odd: "Summan av udda tal",
         divisibility: "Delbarhet med induktion",
         contradiction: "Motsägelsebevis",
+        structure: "Induktionsbevisets byggstenar",
+        counterexample: "Motexempel",
+        inequality: "Induktion med olikheter",
+        flawed: "Hitta felet i beviset",
       },
     },
     differential: {
       title: "Differentialekvationer",
       desc: "Lösningar, modeller och Euler",
-      rule: "y′=ky ger y=Ce^(kx). y′=ky+b har jämviktsvärdet L=−b/k och lösningen y=L+Ce^(kx), när k ≠ 0. Euler: yₙ₊₁=yₙ+h·f(xₙ,yₙ). För y″+ay′+by=0 används r²+ar+b=0.",
+      rule: "y′=ky ger y=Ce^(kx). y′=ky+b har jämviktsvärdet L=−b/k och lösningen y=L+Ce^(kx), när k ≠ 0. Euler: yₙ₊₁=yₙ+h·f(xₙ,yₙ). För y″+ay′+by=0 används r²+ar+b=0; komplexa rötter ±iω ger y=A·cos(ωx)+B·sin(ωx). Separabla ekvationer: samla y på ena sidan och x på den andra och integrera.",
       types: {
         exponential: "Exponentiell förändring",
         linear: "Första ordningen",
@@ -106,16 +126,25 @@
         secondOrder: "Andra ordningen",
         verify: "Verifiera en lösning",
         model: "Ställ upp en modell",
+        match: "Vilken differentialekvation?",
+        separable: "Separabla ekvationer",
+        qualitative: "Jämvikt och beteende",
+        oscillation: "Svängningar (komplexa rötter)",
       },
     },
     calculus: {
       title: "Derivata och integraler",
       desc: "Fördjupning och tillämpning",
-      rule: "Produktregeln: (fg)′=f′g+fg′. Partiell integration: ∫u·v′ dx = uv−∫u′·v dx. En bestämd integral ger nettot av positiva och negativa bidrag. En geometrisk area beräknas med |f(x)|.",
+      rule: "Produktregeln: (fg)′=f′g+fg′. Partiell integration: ∫u·v′ dx = uv−∫u′·v dx. En bestämd integral ger nettot av positiva och negativa bidrag. En geometrisk area beräknas med |f(x)|. Kedjeregeln: (f(g(x)))′ = f′(g(x))·g′(x). Kvotregeln: (u/v)′ = (u′v−uv′)/v². Substitution: u = inre funktion. Rotationsvolym kring x-axeln: V = π∫(f(x))² dx.",
       types: {
         productDerivative: "Produktregeln",
         integration: "Partiell integration",
         area: "Area och tecken",
+        chain: "Kedjeregeln och tangenter",
+        quotient: "Kvotregeln",
+        accumulate: "Integral som ackumulering",
+        substitution: "Variabelsubstitution",
+        volume: "Rotationsvolym",
       },
     },
     graphs: {
@@ -166,53 +195,98 @@
       permutation: 2,
       repeated: 3,
       binomial: 3,
+      arrangement: 3,
+      errorhunt: 3,
       restricted: 4,
+      distribution: 4,
     },
     sets: {
       union: 1,
       intersection: 1,
       difference: 2,
       complement: 2,
+      venn: 2,
       cardinality: 3,
       subsets: 3,
+      laws: 3,
       demorgan: 4,
     },
-    congruence: { remainder: 1, power: 2, equation: 3, inverse: 4 },
-    bases: { toDecimal: 1, fromDecimal: 2, between: 3 },
+    congruence: {
+      remainder: 1,
+      power: 2,
+      weekday: 2,
+      equation: 3,
+      lastdigit: 3,
+      checkdigit: 3,
+      inverse: 4,
+    },
+    bases: { toDecimal: 1, fromDecimal: 2, between: 3, minbase: 3, hexcolor: 3, bits: 4 },
     sequences: {
       arithmetic: 1,
       geometric: 2,
+      identify: 2,
       recurrence: 3,
       second: 3,
+      fromTerms: 3,
       sum: 4,
+      quadratic: 4,
+      annuity: 4,
+      infinite: 5,
     },
-    proofs: { sum: 1, odd: 2, divisibility: 3, contradiction: 4 },
+    proofs: {
+      sum: 1,
+      odd: 2,
+      structure: 2,
+      divisibility: 3,
+      counterexample: 3,
+      contradiction: 4,
+      inequality: 4,
+      flawed: 5,
+    },
     differential: {
       verify: 1,
       exponential: 2,
+      match: 2,
       linear: 3,
       euler: 3,
       model: 3,
       secondOrder: 4,
+      separable: 4,
+      qualitative: 4,
+      oscillation: 5,
     },
-    calculus: { area: 1, productDerivative: 2, integration: 4 },
+    calculus: {
+      area: 1,
+      productDerivative: 2,
+      chain: 2,
+      quotient: 3,
+      accumulate: 3,
+      integration: 4,
+      substitution: 4,
+      volume: 4,
+    },
     graphs: { degrees: 1, trees: 1, complete: 2, euler: 3, shortest: 4 },
   };
+  // "Blandade övningar" på hög nivå ska inte dra från de enklaste typerna.
+  // Nivå 4 drar från typer med minimum ≥ 2 och nivå 5 från typer med minimum ≥ 3.
   function availableTypes(category, level) {
     const all = Object.keys(categories[category].types).filter(
       (type) => (minimum[category][type] || 1) <= level,
     );
-    if (level === 5) {
-      const top = Math.max(...all.map((type) => minimum[category][type] || 1));
-      return all.filter((type) => (minimum[category][type] || 1) === top);
-    }
-    return all;
+    const floor = level >= 5 ? 3 : level === 4 ? 2 : 1;
+    const advanced = all.filter((type) => (minimum[category][type] || 1) >= floor);
+    return advanced.length ? advanced : all;
   }
-  function generate(category, type, level = 2) {
+  function generate(category, type, level = 2, recent = []) {
     const cat = categories[category];
     if (!cat) throw Error("Okänt område");
     level = Math.max(1, Math.min(5, Number(level) || 1));
-    if (!type || type === "mixed") type = pick(availableTypes(category, level));
+    if (!type || type === "mixed") {
+      const pool = availableTypes(category, level),
+        skip = recent.slice(-Math.min(3, pool.length - 1)),
+        fresh = pool.filter((x) => !skip.includes(category + ":" + x));
+      type = pick(fresh.length ? fresh : pool);
+    }
     if (!(type in cat.types)) throw Error("Okänd övning");
 
     const t = {
@@ -291,6 +365,7 @@
     if (values.length !== task.fields.length)
       throw Error("Fyll i alla svarsfält.");
     return task.fields.map((f, i) => {
+      if (f.type === "choice") return String(values[i]) === String(f.answer);
       if (f.type === "set")
         return (
           JSON.stringify(parseSet(values[i])) ===
@@ -308,7 +383,9 @@
   }
   function validate(task, values) {
     task.fields.forEach((f, i) => {
-      if (f.type === "set") parseSet(values[i]);
+      if (f.type === "choice") {
+        if (!f.options.includes(values[i])) throw Error("Välj ett alternativ.");
+      } else if (f.type === "set") parseSet(values[i]);
       else if (f.type === "digits") {
         if (!/^[0-9A-F]+$/i.test(String(values[i]).trim()))
           throw Error("Skriv talets siffror utan bas eller index.");

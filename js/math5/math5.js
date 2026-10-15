@@ -15,6 +15,8 @@
     progress: {},
     test: null,
     retry: [],
+    recentTypes: [],
+    recentPrompts: [],
   };
   try {
     const saved = storage.readJson(key, null);
@@ -46,7 +48,18 @@
     storage.writeJson(key, state);
   }
   function fresh(category = state.category, kind = state.kind) {
-    const task = E.generate(category, kind, state.level);
+    // Undvik att få samma övningstyp eller samma uppgift igen direkt.
+    let task;
+    for (let i = 0; i < 6; i++) {
+      task = E.generate(category, kind, state.level, state.recentTypes);
+      if (!state.recentPrompts.includes(task.prompt + "|" + task.context.join(";")))
+        break;
+    }
+    state.recentTypes = [...(state.recentTypes || []), task.category + ":" + task.type].slice(-6);
+    state.recentPrompts = [
+      ...(state.recentPrompts || []),
+      task.prompt + "|" + task.context.join(";"),
+    ].slice(-20);
     return {
       ...task,
       id: window.GaussApi.workId(),
@@ -72,7 +85,7 @@
   }
   function capture() {
     if (!state.task) return;
-    const fields = [...$("m5Fields").querySelectorAll("input")];
+    const fields = [...$("m5Fields").querySelectorAll("input, select")];
     if (fields.length === state.task.fields.length)
       state.task.draft = fields.map((x) => x.value);
     state.task.notes = $("m5Notes").value;
@@ -365,20 +378,25 @@
     task.fields.forEach((field, index) => {
       const label = document.createElement("label"),
         span = document.createElement("span"),
-        input = document.createElement("input");
+        input = document.createElement(field.type === "choice" ? "select" : "input");
       span.textContent = field.label;
-      input.type = "text";
-      input.inputMode = field.type === "number" ? "decimal" : "text";
-      input.autocomplete = "off";
-      input.spellcheck = false;
+      if (field.type === "choice") {
+        input.append(new Option("Välj alternativ…", ""));
+        field.options.forEach((option) => input.append(new Option(option, option)));
+      } else {
+        input.type = "text";
+        input.inputMode = field.type === "number" ? "decimal" : "text";
+        input.autocomplete = "off";
+        input.spellcheck = false;
+        input.placeholder =
+          field.type === "set"
+            ? "{1, 2, 3} eller ∅"
+            : field.type === "digits"
+              ? "Skriv siffrorna"
+              : "Tal eller bråk";
+      }
       input.value = task.draft[index] || "";
       input.disabled = task.solved;
-      input.placeholder =
-        field.type === "set"
-          ? "{1, 2, 3} eller ∅"
-          : field.type === "digits"
-            ? "Skriv siffrorna"
-            : "Tal eller bråk";
       if (task.grade && !testing())
         input.className = task.grade[index] ? "correct" : "wrong";
       input.oninput = () => {
@@ -386,7 +404,7 @@
         task.grade = null;
         task.solutionSeen = false;
         document
-          .querySelectorAll("#m5Fields input")
+          .querySelectorAll("#m5Fields input, #m5Fields select")
           .forEach((x) => x.classList.remove("wrong", "correct"));
         $("m5Fields")
           .querySelectorAll("small")
@@ -416,7 +434,9 @@
     $("m5Notebook").open = task.reasoning || !!task.notes;
     $("m5AnswerInstruction").textContent = task.reasoning
       ? "Kontrollpunkter till ditt bevis. Skriv resonemanget under Mellanled."
-      : task.fields.some((f) => f.type === "set")
+      : task.fields.some((f) => f.type === "choice")
+        ? "Välj alternativ i rullistorna. Övriga svar skrivs som tal, decimaler eller bråk."
+        : task.fields.some((f) => f.type === "set")
         ? "Mängder: {1, 2, 3}. Tom mängd: ∅. Ordningen spelar ingen roll."
         : "Heltal, decimaler och bråk fungerar. Decimal med komma eller punkt.";
     $("m5HintText").textContent = task.hint;
@@ -752,7 +772,7 @@
       state.task.grade = null;
       state.task.solutionSeen = false;
       document
-        .querySelectorAll("#m5Fields input")
+        .querySelectorAll("#m5Fields input, #m5Fields select")
         .forEach((x) => x.classList.remove("wrong", "correct"));
       message("Inställningen är ändrad.");
     }

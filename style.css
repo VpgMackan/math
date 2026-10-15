@@ -1823,3 +1823,34 @@ textarea:focus-visible {
     flex: 1 1 100px;
   }
 }
+
+/* Append to the end of style.css: flervalsfält (select) i Matematik 5 */
+.m5-fields select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--ink);
+  font: 16px var(--sans);
+  text-overflow: ellipsis;
+}
+.m5-fields select.wrong {
+  border-color: #b9574a;
+  background: #fff7f5;
+}
+.m5-fields select.correct {
+  border-color: #6c917f;
+}
+.m5-fields select:disabled {
+  opacity: 1;
+  background: #fafafa;
+}
+/* Long alternatives (e.g. "find the error") should wrap in the open list on mobile. */
+@media (max-width: 760px) {
+  .m5-fields select {
+    white-space: normal;
+  }
+}

@@ -19,6 +19,8 @@
       setText,
       range,
     } = context;
+    if (root.Math5ExtraGenerators?.has(category, type))
+      return root.Math5ExtraGenerators.populate(context);
     const f = (label, answer, kind, extra) =>
       t.fields.push(field(label, answer, kind, extra));
     const max = [4, 7, 10, 14, 18][level - 1];
@@ -29,23 +31,39 @@
         const a = rand(2, max),
           b = rand(2, level === 1 ? 3 : 6),
           c = level === 1 ? 1 : rand(2, 5);
-        t.prompt = `En meny har ${a} förrätter, ${b} huvudrätter och ${c} efterrätter. Hur många menyer kan väljas med exakt en av varje?`;
-        f("Antal menyer", a * b * c);
+        const sc = pick([
+          [`En meny har ${a} förrätter, ${b} huvudrätter och ${c} efterrätter. Hur många menyer kan väljas med exakt en av varje?`, "Antal menyer"],
+          [`Ett cykellås har tre hjul med ${a}, ${b} respektive ${c} olika lägen. Hur många olika koder går det att ställa in?`, "Antal koder"],
+          [`En butik säljer jackor i ${a} modeller, ${b} färger och ${c} storlekar. Hur många olika varianter finns?`, "Antal varianter"],
+          [`En dator konfigureras med ett av ${a} chassin, ett av ${b} grafikkort och ett av ${c} minnesstorlekar. Hur många konfigurationer finns?`, "Antal konfigurationer"],
+        ]);
+        t.prompt = sc[0];
+        f(sc[1], a * b * c);
         t.solution = [
           `Valen kombineras oberoende: ${a} · ${b} · ${c} = ${a * b * c}.`,
         ];
         if (level === 1) {
-          t.prompt = `Du har ${a} olika tröjor och ${b} olika byxor. Hur många kombinationer med en tröja och en byxa kan du välja?`;
-          t.fields[0].label = "Antal klädkombinationer";
+          const x = pick([
+            ["tröjor", "byxor", "tröja"],
+            ["glassorter", "strössel", "glassort"],
+            ["pizzabottnar", "såser", "pizzabotten"],
+          ]);
+          t.prompt = `Du har ${a} olika ${x[0]} och ${b} olika ${x[1]}. Hur många kombinationer med en av varje kan du välja?`;
+          t.fields[0].label = "Antal kombinationer";
           t.solution = [
-            `Varje tröja kan användas med ${b} byxor. ${a} · ${b} = ${a * b}.`,
+            `Varje ${x[2]} kan kombineras med ${b} ${x[1]}. ${a} · ${b} = ${a * b}.`,
           ];
         }
         t.hint = "Hur många val har du i vart och ett av stegen?";
       }
       if (type === "permutation") {
-        t.prompt = `${n} olika deltagare tävlar om ${k} olika placeringar. Ingen deltagare kan ta mer än en placering. Hur många resultatlistor är möjliga?`;
-        f("Antal resultatlistor", factorial(n) / factorial(n - k));
+        const sc = pick([
+          [`${n} olika deltagare tävlar om ${k} olika placeringar. Ingen deltagare kan ta mer än en placering. Hur många resultatlistor är möjliga?`, "Antal resultatlistor"],
+          [`En förening med ${n} medlemmar ska välja ${k} olika funktionärer, till exempel ordförande och kassör. Ingen kan ha två poster. På hur många sätt kan posterna fördelas?`, "Antal fördelningar"],
+          [`En kod består av ${k} olika bokstäver valda bland ${n} olika bokstäver, och ordningen har betydelse. Hur många koder finns?`, "Antal koder"],
+        ]);
+        t.prompt = sc[0];
+        f(sc[1], factorial(n) / factorial(n - k));
         t.solution = [
           `Ordningen spelar roll. P(${n},${k}) = ${n}!/(${n - k})! = ${factorial(n) / factorial(n - k)}.`,
         ];
@@ -53,8 +71,13 @@
           "Fyll den första placeringen, sedan den andra. Antalet kvarvarande personer minskar.";
       }
       if (type === "combination") {
-        t.prompt = `Välj en grupp med ${k} personer bland ${n} personer. Roller och ordning spelar ingen roll. Hur många grupper finns?`;
-        f("Antal grupper", choose(n, k));
+        const sc = pick([
+          [`Välj en grupp med ${k} personer bland ${n} personer. Roller och ordning spelar ingen roll. Hur många grupper finns?`, "Antal grupper"],
+          [`Ett lag på ${k} spelare ska väljas bland ${n} spelare. Ingen position är bestämd i förväg. Hur många olika lag kan bildas?`, "Antal lag"],
+          [`På en pizza ska du välja ${k} olika pålägg bland ${n} möjliga. Hur många pizzor med olika pålägg kan du få?`, "Antal pizzor"],
+        ]);
+        t.prompt = sc[0];
+        f(sc[1], choose(n, k));
         t.solution = [
           `C(${n},${k}) = ${n}!/(${k}! · ${n - k}!) = ${choose(n, k)}.`,
         ];
@@ -461,31 +484,87 @@
         t.hint = "Derivera funktionen och jämför med funktionen själv.";
       }
       if (type === "model") {
-        const rate = pick([5, 10, 15, 20]),
-          inflow = rand(2, 8) * 10;
-        t.prompt = `En tank har konstant volym. Varje minut förs ${inflow} gram salt in, samtidigt som ${rate} % av det salt som finns i tanken förs ut per minut. Låt y(t) vara saltmängden i gram. Ange a och b i modellen y′=a·y+b och dess jämviktsvärde.`;
-        f("a", -rate / 100);
-        f("b", inflow);
-        f("Jämviktsmängd i gram", inflow / (rate / 100));
-        t.solution = [
-          `Förändring = inflöde − utflöde: y′=${inflow}−${fmt(rate / 100)}y.`,
-          `Jämvikt: y=${inflow}/${fmt(rate / 100)}=${fmt(inflow / (rate / 100))} gram.`,
-        ];
-        t.hint =
-          "Utflödet är proportionellt mot hur mycket salt som finns, inflödet är konstant.";
+        const sc = pick(["tank", "cooling", "harvest"]);
+        if (sc === "tank") {
+          const rate = pick([5, 10, 15, 20]),
+            inflow = rand(2, 8) * 10;
+          t.prompt = `En tank har konstant volym. Varje minut förs ${inflow} gram salt in, samtidigt som ${rate} % av det salt som finns i tanken förs ut per minut. Låt y(t) vara saltmängden i gram. Ange a och b i modellen y′=a·y+b och dess jämviktsvärde.`;
+          f("a", -rate / 100);
+          f("b", inflow);
+          f("Jämviktsmängd i gram", inflow / (rate / 100));
+          t.solution = [
+            `Förändring = inflöde − utflöde: y′=${inflow}−${fmt(rate / 100)}y.`,
+            `Jämvikt: y=${inflow}/${fmt(rate / 100)}=${fmt(inflow / (rate / 100))} gram.`,
+          ];
+          t.hint =
+            "Utflödet är proportionellt mot hur mycket salt som finns, inflödet är konstant.";
+        }
+        if (sc === "cooling") {
+          const rate = pick([5, 10, 20]),
+            room = rand(18, 24);
+          t.prompt = `En kopp kaffe har temperaturen y(t) grader efter t minuter i ett rum med temperaturen ${room} °C. Varje minut minskar skillnaden mellan kaffet och rummet med ${rate} % av skillnaden. Ställ upp modellen y′=a·y+b och ange jämviktstemperaturen.`;
+          f("a", -rate / 100);
+          f("b", (rate / 100) * room, "number", { tolerance: 1e-4 });
+          f("Jämviktstemperatur", room);
+          t.solution = [
+            `Förändringen är proportionell mot skillnaden: y′ = −${fmt(rate / 100)}(y − ${room}) = −${fmt(rate / 100)}y + ${fmt((rate / 100) * room)}.`,
+            `Jämvikt: y′ = 0 ger y = ${room}. Kaffet närmar sig rumstemperaturen.`,
+          ];
+          t.hint = "Skriv förändringen som en konstant gånger (y − rumstemperaturen).";
+        }
+        if (sc === "harvest") {
+          const grow = pick([10, 20, 25]),
+            catchPer = rand(2, 8) * 10;
+          t.prompt = `En fiskpopulation y(t) växer med ${grow} % per år, men ${catchPer} fiskar fångas varje år. Ställ upp modellen y′=a·y+b och ange den populationsstorlek där populationen varken ökar eller minskar.`;
+          f("a", grow / 100);
+          f("b", -catchPer);
+          f("Jämviktspopulation", catchPer / (grow / 100));
+          t.solution = [
+            `Tillväxt minus fångst: y′ = ${fmt(grow / 100)}y − ${catchPer}.`,
+            `Jämvikt: y = ${catchPer}/${fmt(grow / 100)} = ${fmt(catchPer / (grow / 100))}. Över detta växer populationen, under minskar den.`,
+          ];
+          t.hint = "Tillväxten är proportionell mot populationen, fångsten är konstant.";
+        }
       }
     }
     if (category === "calculus") {
       if (type === "productDerivative") {
         const p = rand(2, 4),
-          k = rand(1, 3);
-        t.prompt = `f(x)=x^${p}·e^(${k}x). Derivatan skrivs f′(x)=e^(${k}x)·(A·x^${p - 1}+B·x^${p}). Ange A och B.`;
-        f("A", p);
-        f("B", k);
-        t.solution = [
-          `Produktregeln: f′=${p}x^${p - 1}e^(${k}x)+${k}x^${p}e^(${k}x).`,
-        ];
-        t.hint = "Derivera en faktor i taget och behåll den andra.";
+          k = rand(1, 3),
+          fam = pick(["exp", "ln", "sin", "cos"]);
+        if (fam === "exp") {
+          t.prompt = `f(x)=x^${p}·e^(${k}x). Derivatan skrivs f′(x)=e^(${k}x)·(A·x^${p - 1}+B·x^${p}). Ange A och B.`;
+          f("A", p);
+          f("B", k);
+          t.solution = [
+            `Produktregeln: f′=${p}x^${p - 1}e^(${k}x)+${k}x^${p}e^(${k}x).`,
+          ];
+        }
+        if (fam === "ln") {
+          t.prompt = `f(x)=x^${p}·ln x för x > 0. Derivatan skrivs f′(x)=x^${p - 1}·(A·ln x+B). Ange A och B.`;
+          f("A", p);
+          f("B", 1);
+          t.solution = [
+            `Produktregeln: f′=${p}x^${p - 1}·ln x + x^${p}·(1/x) = x^${p - 1}(${p}·ln x + 1).`,
+          ];
+        }
+        if (fam === "sin") {
+          t.prompt = `f(x)=x^${p}·sin(${k}x). Derivatan skrivs f′(x)=x^${p - 1}·(A·sin(${k}x)+B·x·cos(${k}x)). Ange A och B.`;
+          f("A", p);
+          f("B", k);
+          t.solution = [
+            `Produktregeln och kedjeregeln: f′=${p}x^${p - 1}sin(${k}x)+x^${p}·${k}cos(${k}x).`,
+          ];
+        }
+        if (fam === "cos") {
+          t.prompt = `f(x)=x^${p}·cos(${k}x). Derivatan skrivs f′(x)=x^${p - 1}·(A·cos(${k}x)+B·x·sin(${k}x)). Ange A och B.`;
+          f("A", p);
+          f("B", -k);
+          t.solution = [
+            `Produktregeln och kedjeregeln: f′=${p}x^${p - 1}cos(${k}x)+x^${p}·(−${k}sin(${k}x)).`,
+          ];
+        }
+        t.hint = "Derivera en faktor i taget och behåll den andra. Glöm inte kedjeregeln för den inre funktionen.";
       }
       if (type === "integration") {
         const k = rand(1, 4);
@@ -499,15 +578,39 @@
         t.hint = "Låt x vara faktorn som deriveras i partiell integration.";
       }
       if (type === "area") {
-        const a = rand(1, 4),
-          b = rand(1, 5);
-        t.prompt = `För f(x)=x på intervallet [−${a}, ${b}]: bestäm den bestämda integralen och den geometriska arean mellan grafen och x-axeln.`;
-        f("Bestämd integral", (b * b - a * a) / 2);
-        f("Geometrisk area", (a * a + b * b) / 2);
-        t.solution = [
-          `Integralen är [x²/2] från −${a} till ${b}: (${b * b}−${a * a})/2=${fmt((b * b - a * a) / 2)}.`,
-          `Arean är summan av två triangelareor: (${a * a}+${b * b})/2=${fmt((a * a + b * b) / 2)}.`,
-        ];
+        const fam = level >= 3 ? pick(["lin", "cubic", "parab"]) : "lin";
+        if (fam === "lin") {
+          const a = rand(1, 4),
+            b = rand(1, 5);
+          t.prompt = `För f(x)=x på intervallet [−${a}, ${b}]: bestäm den bestämda integralen och den geometriska arean mellan grafen och x-axeln.`;
+          f("Bestämd integral", (b * b - a * a) / 2);
+          f("Geometrisk area", (a * a + b * b) / 2);
+          t.solution = [
+            `Integralen är [x²/2] från −${a} till ${b}: (${b * b}−${a * a})/2=${fmt((b * b - a * a) / 2)}.`,
+            `Arean är summan av två triangelareor: (${a * a}+${b * b})/2=${fmt((a * a + b * b) / 2)}.`,
+          ];
+        }
+        if (fam === "cubic") {
+          const a = rand(1, 3),
+            b = rand(1, 3);
+          t.prompt = `För f(x)=x³ på intervallet [−${a}, ${b}]: bestäm den bestämda integralen och den geometriska arean mellan grafen och x-axeln.`;
+          f("Bestämd integral", (b ** 4 - a ** 4) / 4);
+          f("Geometrisk area", (a ** 4 + b ** 4) / 4);
+          t.solution = [
+            `Integralen är [x⁴/4] från −${a} till ${b}: (${b ** 4}−${a ** 4})/4=${fmt((b ** 4 - a ** 4) / 4)}.`,
+            `Grafen ligger under x-axeln för x<0 och över för x>0. Arean är (${a ** 4}+${b ** 4})/4=${fmt((a ** 4 + b ** 4) / 4)}.`,
+          ];
+        }
+        if (fam === "parab") {
+          const s = rand(2, 6);
+          t.prompt = `Grafen till f(x)=x(x−${s}) skär x-axeln i x=0 och x=${s}. Bestäm den bestämda integralen från 0 till ${s} och den geometriska arean mellan grafen och x-axeln.`;
+          f("Bestämd integral", -(s ** 3) / 6, "number", { tolerance: 0.006 });
+          f("Geometrisk area", s ** 3 / 6, "number", { tolerance: 0.006 });
+          t.solution = [
+            `∫(x²−${s}x)dx=[x³/3−${fmt(s / 2)}x²] från 0 till ${s} = ${s ** 3}/3 − ${s ** 3}/2 = −${s ** 3}/6.`,
+            `Grafen ligger under x-axeln mellan nollställena, så arean är ${s ** 3}/6.`,
+          ];
+        }
         t.hint =
           "Integralen räknar området under x-axeln negativt. Geometrisk area är alltid positiv.";
       }
@@ -793,21 +896,73 @@
     }
     if (level >= 4 && category === "calculus" && type === "integration") {
       const k = rand(1, 3),
-        p = level === 4 ? 2 : 3;
-      const A = 1 / k,
-        B = -p / (k * k),
-        D = (p * (p - 1)) / k ** 3,
-        G = (-p * (p - 1) * (p - 2)) / k ** 4;
-      t.prompt = `Bestäm en primitiv funktion till x^${p}·e^(${k}x). Skriv F=e^(${k}x)·(A·x^${p}+B·x^${p - 1}+D${p === 3 ? "·x+G" : ""})+C och ange koefficienterna.`;
-      t.fields = [field("A", A), field("B", B), field("D", D)];
-      if (p === 3) t.fields.push(field("G", G));
-      t.solution = [
-        `Använd partiell integration ${p} gånger; graden på polynomet minskar varje gång.`,
-        `A=${fmt(A)}, B=${fmt(B)}, D=${fmt(D)}${p === 3 ? ", G=" + fmt(G) : ""}.`,
-        `Verifiera genom att derivera: polynomet P måste uppfylla P′+${k}P=x^${p}.`,
-      ];
-      t.hint =
-        "Välj polynomet som u. Alternativt jämför koefficienter i P′+kP=x^p.";
+        fam = level === 4 ? pick(["exp", "cos", "sin", "ln"]) : pick(["exp3", "cos2", "ln2"]);
+      if (fam === "exp" || fam === "exp3") {
+        const p = fam === "exp" ? 2 : 3;
+        const A = 1 / k,
+          B = -p / (k * k),
+          D = (p * (p - 1)) / k ** 3,
+          G = (-p * (p - 1) * (p - 2)) / k ** 4;
+        t.prompt = `Bestäm en primitiv funktion till x^${p}·e^(${k}x). Skriv F=e^(${k}x)·(A·x^${p}+B·x^${p - 1}+D${p === 3 ? "·x+G" : ""})+C och ange koefficienterna.`;
+        t.fields = [field("A", A), field("B", B), field("D", D)];
+        if (p === 3) t.fields.push(field("G", G));
+        t.solution = [
+          `Använd partiell integration ${p} gånger; graden på polynomet minskar varje gång.`,
+          `A=${fmt(A)}, B=${fmt(B)}, D=${fmt(D)}${p === 3 ? ", G=" + fmt(G) : ""}.`,
+          `Verifiera genom att derivera: polynomet P måste uppfylla P′+${k}P=x^${p}.`,
+        ];
+        t.hint = "Välj polynomet som u. Alternativt jämför koefficienter i P′+kP=x^p.";
+      }
+      if (fam === "cos") {
+        t.prompt = `Bestäm en primitiv funktion till x·cos(${k}x). Skriv F=A·x·sin(${k}x)+B·cos(${k}x)+C och ange A och B.`;
+        t.fields = [field("A", 1 / k), field("B", 1 / (k * k))];
+        t.solution = [
+          `Partiell integration med u=x och v′=cos(${k}x): v=sin(${k}x)/${k}.`,
+          `∫x·cos(${k}x)dx = x·sin(${k}x)/${k} − ∫sin(${k}x)/${k} dx = x·sin(${k}x)/${k} + cos(${k}x)/${k * k} + C.`,
+        ];
+        t.hint = "Låt x vara u och derivera den. Då försvinner x i nästa integral.";
+      }
+      if (fam === "sin") {
+        t.prompt = `Bestäm en primitiv funktion till x·sin(${k}x). Skriv F=A·x·cos(${k}x)+B·sin(${k}x)+C och ange A och B.`;
+        t.fields = [field("A", -1 / k), field("B", 1 / (k * k))];
+        t.solution = [
+          `Partiell integration med u=x och v′=sin(${k}x): v=−cos(${k}x)/${k}.`,
+          `∫x·sin(${k}x)dx = −x·cos(${k}x)/${k} + ∫cos(${k}x)/${k} dx = −x·cos(${k}x)/${k} + sin(${k}x)/${k * k} + C.`,
+        ];
+        t.hint = "Låt x vara u. Primitiv funktion till sin(kx) är −cos(kx)/k.";
+      }
+      if (fam === "ln") {
+        const m = rand(1, 3);
+        t.prompt = `Bestäm en primitiv funktion till x^${m}·ln x för x > 0. Skriv F=x^${m + 1}·(A·ln x+B)+C och ange A och B.`;
+        t.fields = [field("A", 1 / (m + 1)), field("B", -1 / (m + 1) ** 2)];
+        t.solution = [
+          `Partiell integration med u=ln x och v′=x^${m}: v=x^${m + 1}/${m + 1}.`,
+          `∫x^${m}·ln x dx = x^${m + 1}·ln x/${m + 1} − ∫x^${m}/${m + 1} dx = x^${m + 1}(ln x/${m + 1} − 1/${(m + 1) ** 2}) + C.`,
+        ];
+        t.hint = "Här är det ln x som ska deriveras (u), eftersom den primitiva funktionen till ln x är besvärlig.";
+      }
+      if (fam === "cos2") {
+        t.prompt = `Bestäm en primitiv funktion till x²·cos(${k}x). Skriv F=A·x²·sin(${k}x)+B·x·cos(${k}x)+D·sin(${k}x)+C och ange A, B och D.`;
+        t.fields = [field("A", 1 / k), field("B", 2 / (k * k)), field("D", -2 / k ** 3)];
+        t.solution = [
+          `Partiell integration två gånger: först med u=x², sedan med u=x.`,
+          `F = x²·sin(${k}x)/${k} + 2x·cos(${k}x)/${k * k} − 2·sin(${k}x)/${k ** 3} + C.`,
+          `Kontrollera genom att derivera F.`,
+        ];
+        t.hint = "Upprepa partiell integration: graden på polynomet minskar med ett varje gång.";
+      }
+      if (fam === "ln2") {
+        const m = rand(1, 3);
+        t.prompt = `Bestäm en primitiv funktion till x^${m}·(ln x)². Skriv F=x^${m + 1}·(A·(ln x)²+B·ln x+D)+C och ange A, B och D.`;
+        const q = m + 1;
+        t.fields = [field("A", 1 / q), field("B", -2 / (q * q)), field("D", 2 / q ** 3)];
+        t.solution = [
+          `Partiell integration med u=(ln x)² och v′=x^${m}: v=x^${q}/${q}.`,
+          `∫x^${m}(ln x)²dx = x^${q}(ln x)²/${q} − (2/${q})∫x^${m}·ln x dx. Den sista integralen löses med partiell integration igen.`,
+          `F = x^${q}·((ln x)²/${q} − 2·ln x/${q * q} + 2/${q ** 3}) + C.`,
+        ];
+        t.hint = "Partiell integration två gånger: derivera ln-faktorn varje gång.";
+      }
     }
     if (level === 5 && category === "graphs" && type === "shortest") {
       const distance = t.fields[0].answer,
